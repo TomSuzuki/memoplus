@@ -24,6 +24,7 @@
 #enum MenuTab_Version
 #enum MenuTab_Rename
 #enum MenuTab_MakeTxt
+#enum MenuTab_Font
 #enum MenuTab_PageBase = 1024
 
 // 画面のID割り振り
@@ -58,6 +59,7 @@
 	SetConfigData notedata
 		FontName = LoadConfig("FontName","ＭＳ ゴシック")
 		FontSize = int(LoadConfig("FontSize","15"))
+		FontStyle = int(LoadConfig("FontStyle","0"))
 	SaveConfig "config.csv"
 
 	// 初期化
@@ -298,6 +300,9 @@
 			gosub*Label_Delete
 			gosub*Label_SetMenu
 			swbreak
+		case MenuTab_Font			//フォント変更
+			/*未実装*/
+			swbreak
 		default								//タブ変更
 			if MenuTab_PageBase <= n{
 				SetTabData TabData(pPageID),boxdata
@@ -397,7 +402,7 @@
 
 	cls:clrobj
 	gosub*Label_DrawStrings
-	objmode 2,0:font FontName,FontSize
+	objmode 2,0:font FontName,FontSize,FontStyle
 	pos 0,0:mesbox boxdata,ginfo_winx,ginfo_winy-20,5,-1
 	objbox = stat
 
@@ -435,21 +440,26 @@
 
 	CreatePopupMenu
 	hMenu.3 = stat
-		foreach(TabData)
-			AppendMenu hMenu.3, 0, MenuTab_PageBase+cnt,	GetTabName(TabData(cnt))
-		loop
-		CheckMenuRadioItem hMenu.3, MenuTab_PageBase, MenuTab_PageBase+length(TabData), MenuTab_PageBase, 0x0100
-	
+		AppendMenu hMenu.3, 0, MenuTab_Font, 			"フォント(&F)..."
+
 	CreatePopupMenu
 	hMenu.4 = stat
-		AppendMenu hMenu.4, 0, MenuTab_Version, 	"バージョン(&A)"
+		foreach(TabData)
+			AppendMenu hMenu.4, 0, MenuTab_PageBase+cnt,	GetTabName(TabData(cnt))
+		loop
+		CheckMenuRadioItem hMenu.4, MenuTab_PageBase, MenuTab_PageBase+length(TabData), MenuTab_PageBase, 0x0100
+	
+	CreatePopupMenu
+	hMenu.5 = stat
+		AppendMenu hMenu.5, 0, MenuTab_Version, 	"バージョン(&A)"
 
 	CreateMenu
 	hMenu.0 = stat
 		AppendMenu hMenu.0, 0x0010, hMenu.1, "ファイル(&F)"
 		AppendMenu hMenu.0, 0x0010, hMenu.2, "編集(&E)"
-		AppendMenu hMenu.0, 0x0010, hMenu.3, "ページ(&P)"
-		AppendMenu hMenu.0, 0x0010, hMenu.4, "ヘルプ(&H)"
+		AppendMenu hMenu.0, 0x0010, hMenu.3, "書式(&O)"
+		AppendMenu hMenu.0, 0x0010, hMenu.4, "ページ(&P)"
+		AppendMenu hMenu.0, 0x0010, hMenu.5, "ヘルプ(&H)"
 
 	SetMenu hwnd, hMenu.0
 	DrawMenuBar hwnd
