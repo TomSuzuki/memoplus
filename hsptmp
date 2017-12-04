@@ -1,12 +1,17 @@
+// コンパイルの設定
 #packopt icon "./icon.ico"
 #packopt version "バージョン.txt"
 
+// ライブラリのインクルード
 #include "lib.hsp"
 #include "lib2.hsp"
 #include "user32.as"
 
-#define VersionMes "Version 1.00"
+// 設定
+#define VersionMes		"Version 1.00"
+#define CopyrightMes	"Copyright 2015-2017 BENIKAGE220"
 
+// タブのID割り振り
 #enum MenuTab_NewFile = 1
 #enum MenuTab_Open
 #enum MenuTab_NameSave
@@ -20,11 +25,14 @@
 #enum MenuTab_MakeTxt
 #enum MenuTab_PageBase = 1024
 
+// 画面のID割り振り
 #enum BufferRename = 1
 
-#define TitleMes1 "メモ帳＋"
-#define TitleMes2 "更新"
+// 表示文字の設定
+#define TitleMes1	"メモ帳＋"
+#define TitleMes2	"更新"
 
+// テキストデータを保存するモジュール
 #module ModuleTabData name,data
 #modinit str p1,str p2
 	name = p1
@@ -42,52 +50,63 @@
 	return
 #global
 
+// ここから本体 -----------------------------------------------------------------------------------
 	sdim boxdata,0xFFFFFF
 
-	StartDir = dir_cur
-	;File = "./testdata/a.txp"
-	File = dir_cmdline
-	strrep File,"\"",""
-	exist File
-	if strsize = -1:File = "null"
+	// 初期データ
+	StartDir = dir_cur	//カレントディレクトリ
+	File = dir_cmdline	//カレントファイル
+	File = "./testdata/a.txp"	;テストデータの読み込み
+	strrep File,"\"",""	//パスの整形
+	exist File					//ファイルが存在するか？
+	if strsize = -1:File = "null"	//存在しないならファイル名をnullにする
 
+	// 名前変更用ウィンドウを作成
 	screen BufferRename,320,96,2
 		title "名前の変更"
-	
+
+	// メインウィンドウを作成
 	ovscreen 0,640,480
 		title TitleMes1
 
+	// データの初期化
 	pPageID = -1
 	FlgUpDate = 0
 	dimtype TabData,vartype("struct")
 
+	// ドラッグ＆ドロップの呼び出し設定
 	DandD_SetWindow 1
 	DandD_SetSubLabel *Label_GetDDFile
 
+	// 受け取りコマンドの呼び出し設定
 	oncmd gosub *Label_WIndowCommand, 0x00005
 	oncmd gosub *Label_MenuCommand, 	0x00111
-	//oncmd gosub *Label_ReDrawCommand, 0x00006
 
+	// HSPの割り込みラベル設定
 	onexit gosub *Label_Exit
-	onkey gosub*Label_Key
+	onkey gosub *Label_Key
 
+	// 初期配置
 	gosub*Label_SetMenu
 	gosub*Label_SetMesbox
 	gosub*Label_Open
 
 	stop
 
-//表示
+// 表示（文字）
 *Label_DrawStrings
 
+	// 背景
 	color 240,240,240:boxf 0,ginfo_winy-20,ginfo_winx,ginfo_winy
 	color 0:font msgothic,15
 	pos 5,ginfo_winy-17:mes dName+" / "+dPage
+
+	// 更新があったら文字を表示
 	if FlgUpDate = 1:pos ginfo_winx-5,ginfo_winy-3:edmes "[更新]"
 
 	return
 
-//キー
+// キー
 *Label_Key
 
 	if pboxdata ! boxdata{
@@ -115,7 +134,7 @@
 
 	return
 
-//終了
+// 終了
 *Label_Exit
 
 	if pboxdata ! boxdata:FlgUpDate = 1	
@@ -131,7 +150,7 @@
 	
 	end
 
-//名前をつけて保存
+// 名前をつけて保存
 *Label_NameSave
 
 	dialog "txp",17,"メモ帳＋ファイル"
@@ -144,7 +163,7 @@
 
 	return
 
-//保存（Fileにセーブ）
+// 保存（Fileにセーブ）
 *Label_Save
 
 	FlgUpDate = 0
@@ -172,7 +191,7 @@
 
 	return
 
-//開く（Fileにファイルパスが入っている　nullで初期化）
+// 開く（Fileにファイルパスが入っている※nullで初期化）
 *Label_Open
 
 	dimtype TabData,vartype("struct")
@@ -222,7 +241,7 @@
 
 	return
 
-//メニューバー受け取り
+// メニューバー受け取り
 *Label_MenuCommand
 
 	if lparam = 0{
@@ -232,7 +251,7 @@
 			gosub*Label_Exit
 			swbreak
 		case MenuTab_Version	//バージョン情報
-			dialog "メモ帳＋  "+VersionMes+"\nCopyright 2015-2017 BENIKAGE220",," version"
+			dialog "メモ帳＋  "+VersionMes+"\n"+CopyrightMes,," version"
 			swbreak
 		case MenuTab_Open			//開く
 			dialog "txp",16,"メモ帳＋ファイル"
@@ -284,7 +303,7 @@
 
 	return
 
-//ページ削除
+// ページ削除
 *Label_Delete
 
 	tempFile = File
@@ -317,7 +336,7 @@
 	
 	return
 
-//名前変更
+// 名前変更
 *Label_Rename
 	gsel BufferRename,2
 	cls 1
@@ -330,7 +349,7 @@
 	pos 220,64	:button goto "キャンセル",*Label_Rename3
 	return
 
-//名前変更（確定 newname）
+// 名前変更（確定 newname）
 *Label_Rename2
 	if newname = ""{
 		dialog "無効な名前です。"
@@ -342,24 +361,24 @@
 	CheckMenuRadioItem hMenu.3, MenuTab_PageBase, MenuTab_PageBase+length(TabData), pPageID, 0x0100
 	stop
 
-//名前変更（キャンセル）
+// 名前変更（キャンセル）
 *Label_Rename3
 	gsel BufferRename,-1
 	stop
 
-//非アクティブになったらウィンドウを消す
+// 非アクティブになったらウィンドウを消す
 *Label_ReDrawCommand
 	if ginfo(2) ! BufferRename:gsel BufferRename,-1
 	return
 
-//画面サイズ変更受けとり
+// 画面サイズ変更受けとり
 *Label_WIndowCommand
 
 	gosub*Label_SetMesbox
 	
 	return
 
-//メッセージボックス
+// メッセージボックス
 *Label_SetMesbox
 
 	dName = getpath(File,8)
@@ -376,7 +395,7 @@
 	
 	return
 
-//メニューバー
+// メニューバー
 *Label_SetMenu
 	
 	gsel 0
@@ -427,7 +446,7 @@
 	
 	return
 
-//テキスト化
+// テキスト化
 *Label_MakeTxt
 
 	dialog "txt",17,"txt"
@@ -442,6 +461,7 @@
 
 	return
 
+// ドラッグ＆ドロップの呼び出しラベル
 *Label_GetDDFile
 	DandD_GetList list
 
