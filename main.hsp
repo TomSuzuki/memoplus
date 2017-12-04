@@ -5,6 +5,7 @@
 // ライブラリのインクルード
 #include "lib.hsp"
 #include "lib2.hsp"
+#include "lib3.hsp"
 #include "user32.as"
 
 // 設定
@@ -51,6 +52,15 @@
 #global
 
 // ここから本体 -----------------------------------------------------------------------------------
+	// コンフィグのロード
+	notesel notedata
+	enoteload "config.csv"
+	SetConfigData notedata
+		FontName = LoadConfig("FontName","ＭＳ ゴシック")
+		FontSize = int(LoadConfig("FontSize","15"))
+	SaveConfig "config.csv"
+
+	// 初期化
 	sdim boxdata,0xFFFFFF
 
 	// 初期データ
@@ -387,7 +397,7 @@
 
 	cls:clrobj
 	gosub*Label_DrawStrings
-	objmode 2,0:font msgothic,15
+	objmode 2,0:font FontName,FontSize
 	pos 0,0:mesbox boxdata,ginfo_winx,ginfo_winy-20,5,-1
 	objbox = stat
 

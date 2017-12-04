@@ -1,0 +1,46 @@
+// コンフィグなどのデータを簡単に読み書きできるようにしたい
+//key,data;の形で書かれている
+//※データに,を含んではいけない
+#module config
+#deffunc SetConfigData str p1				// コンフィグデータをセット
+	ConfigData = p1
+	return
+#defcfunc LoadConfig str p1,str p2	// 読み込む（key,初期値）
+	s = "NULL"
+	notesel ConfigData
+	flg = 1
+	repeat noteinfo(0)
+		noteget data,cnt
+		split data,",",key,data
+		if key = p1:s = data:flg = 0:break
+	loop
+	if(flg){
+		noteadd strf("%s,%s",p1,p2),-1,0
+		s = p2
+	}
+	noteunsel
+	return s
+#deffunc UpdateConfig str p1,str p2	// セットする（key,data）
+	notesel ConfigData
+	flg = 1
+	repeat noteinfo(0)
+		noteget data,cnt
+		split data,",",key,data
+		if key = p1{
+			noteadd strf("%s,%s",p1,p2),cnt,1
+			flg = 0
+			break
+		}
+	loop
+	if(flg){
+		noteadd strf("%s,%s",p1,p2),-1,0
+	}
+	noteunsel
+	return
+#deffunc SaveConfig str p1					// コンフィグを保存
+	notesel ConfigData
+	notesave p1
+	noteunsel
+	return
+#global
+
