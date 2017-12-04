@@ -1,0 +1,459 @@
+#packopt icon "./icon.ico"
+#packopt version "バージョン.txt"
+
+#include "lib.hsp"
+#include "lib2.hsp"
+#include "user32.as"
+
+#define VersionMes "Version 1.00"
+
+#enum MenuTab_NewFile = 1
+#enum MenuTab_Open
+#enum MenuTab_NameSave
+#enum MenuTab_Save
+#enum MenuTab_Printing
+#enum MenuTab_Exit
+#enum MenuTab_NewPage
+#enum MenuTab_DelPage
+#enum MenuTab_Version
+#enum MenuTab_Rename
+#enum MenuTab_MakeTxt
+#enum MenuTab_PageBase = 1024
+
+#enum BufferRename = 1
+
+#define TitleMes1 "メモ帳＋"
+#define TitleMes2 "更新"
+
+#module ModuleTabData name,data
+#modinit str p1,str p2
+	name = p1
+	data = p2
+	return
+#modcfunc GetTabName
+	return name
+#modcfunc GetTabData
+	return data
+#modfunc SetTabName str p1
+	name = p1
+	return
+#modfunc SetTabData str p1
+	data = p1
+	return
+#global
+
+	sdim boxdata,0xFFFFFF
+
+	StartDir = dir_cur
+	;File = "./testdata/a.txp"
+	File = dir_cmdline
+	strrep File,"\"",""
+	exist File
+	if strsize = -1:File = "null"
+
+	screen BufferRename,320,96,2
+		title "名前の変更"
+	
+	ovscreen 0,640,480
+		title TitleMes1
+
+	pPageID = -1
+	FlgUpDate = 0
+	dimtype TabData,vartype("struct")
+
+	DandD_SetWindow 1
+	DandD_SetSubLabel *Label_GetDDFile
+
+	oncmd gosub *Label_WIndowCommand, 0x00005
+	oncmd gosub *Label_MenuCommand, 	0x00111
+	//oncmd gosub *Label_ReDrawCommand, 0x00006
+
+	onexit gosub *Label_Exit
+	onkey gosub*Label_Key
+
+	gosub*Label_SetMenu
+	gosub*Label_SetMesbox
+	gosub*Label_Open
+
+	stop
+
+//表示
+*Label_DrawStrings
+
+	color 240,240,240:boxf 0,ginfo_winy-20,ginfo_winx,ginfo_winy
+	color 0:font msgothic,15
+	pos 5,ginfo_winy-17:mes dName+" / "+dPage
+	if FlgUpDate = 1:pos ginfo_winx-5,ginfo_winy-3:edmes "[更新]"
+
+	return
+
+//キー
+*Label_Key
+
+	if pboxdata ! boxdata{
+		FlgUpDate = 1
+		gosub*Label_DrawStrings
+	}
+
+	getkey Ctrl,17
+
+	if Ctrl = 1{
+		switch iparam
+		case 83	//s
+			if File = "null"{
+				gosub*Label_NameSave
+			}else{
+				gosub*Label_Save
+			}
+			swbreak
+		case 78	//n
+			swbreak
+		case 79	//o
+			swbreak
+		swend
+	}
+
+	return
+
+//終了
+*Label_Exit
+
+	if pboxdata ! boxdata:FlgUpDate = 1	
+
+	if FlgUpDate = 1{
+		dialog "ファイルは更新されています。\n閉じますか？",2
+		if stat = 7:return
+	}
+
+	repeat length(hMenu)
+		DestroyMenu hMenu.cnt
+	loop
+	
+	end
+
+//名前をつけて保存
+*Label_NameSave
+
+	dialog "txp",17,"メモ帳＋ファイル"
+	if stat ! 1:return
+
+	File = refstr
+	if getpath(File,2) = "":File = File + ".txp"
+
+	gosub*Label_Save
+
+	return
+
+//保存（Fileにセーブ）
+*Label_Save
+
+	FlgUpDate = 0
+	pboxdata = boxdata
+
+	SetTabData TabData(pPageID),boxdata
+
+	data1 = ""
+	data2 = ""
+
+	foreach TabData
+		name = GetTabName(TabData(cnt))
+		data = GetTabData(TabData(cnt))
+		strrep data,"\n","\n"
+		data1 = data1 + (stat+1) + "," + name + "\n"
+		data2 = data2 + data + "\n"
+	loop
+
+	data = data1 + "END\n" + data2
+	notesel data
+	notesave File
+	noteunsel
+
+	gosub*Label_DrawStrings
+
+	return
+
+//開く（Fileにファイルパスが入っている　nullで初期化）
+*Label_Open
+
+	dimtype TabData,vartype("struct")
+	pPageID = 0
+
+	if File = "null"{
+		newmod TabData,ModuleTabData,"無題のページ",""
+		boxdata = ""
+		objprm objbox,boxdata
+	}else{
+		Flg = -1
+		n = 0
+		notesel loaddata
+		noteload File
+		dimtype NoteLine,vartype("int"),noteinfo(0)
+		dimtype NoteName,vartype("str"),noteinfo(0)
+		dimtype NoteData,vartype("str"),noteinfo(0)
+		repeat noteinfo(0)
+			noteget data,cnt
+			n = n + 1
+			if Flg = -1{
+				split data,",",a,b
+				if data = "END":Flg = 0
+				NoteLine(cnt) = int(a)
+				NoteName(cnt) = b
+				n = 0
+			}else{
+				if NoteData(Flg) ! "":NoteData(Flg) = NoteData(Flg) + "\n"
+				NoteData(Flg) = NoteData(Flg) + data
+				if n >= NoteLine(Flg) && NoteLine(Flg) ! 0{
+					newmod TabData,ModuleTabData,NoteName(Flg),NoteData(Flg)
+					n = 0
+					Flg = Flg + 1
+				}
+			}
+		loop
+		noteunsel
+		if Flg = 0:newmod TabData,ModuleTabData,"無題のページ",""
+		boxdata = GetTabData(TabData(0))
+		objprm objbox,boxdata
+	}
+
+	pboxdata = boxdata
+
+	gosub*Label_SetMenu
+	gosub*Label_SetMesbox
+
+	return
+
+//メニューバー受け取り
+*Label_MenuCommand
+
+	if lparam = 0{
+		n = wparam&$FFFF
+		switch(n)
+		case MenuTab_Exit			//終了
+			gosub*Label_Exit
+			swbreak
+		case MenuTab_Version	//バージョン情報
+			dialog "メモ帳＋  "+VersionMes+"\nCopyright 2015-2017 BENIKAGE220",," version"
+			swbreak
+		case MenuTab_Open			//開く
+			dialog "txp",16,"メモ帳＋ファイル"
+			if stat = 1{
+				File = refstr
+				gosub*Label_Open
+			}
+			swbreak
+		case MenuTab_NewPage	//新規ページ
+			newmod TabData,ModuleTabData,"無題のページ",""
+			gosub*Label_SetMenu
+			swbreak
+		case MenuTab_NewFile	//新規ファイル
+			File = "null"
+			gosub*Label_Open
+			swbreak
+		case MenuTab_NameSave	//名前を付けて保存
+			gosub*Label_NameSave
+			swbreak
+		case MenuTab_Rename		//名前変更
+			gosub*Label_Rename
+			swbreak
+		case MenuTab_MakeTxt	//テキストとして保存
+			gosub*Label_MakeTxt
+			swbreak
+		case MenuTab_Save			//上書き保存
+			if File = "null"{
+				gosub*Label_NameSave
+			}else{
+				gosub*Label_Save
+			}
+			swbreak
+		case MenuTab_DelPage	//削除
+			gosub*Label_Delete
+			gosub*Label_SetMenu
+			swbreak
+		default								//タブ変更
+			if MenuTab_PageBase <= n{
+				SetTabData TabData(pPageID),boxdata
+				boxdata = GetTabData(TabData(n-MenuTab_PageBase))
+				objprm objbox,boxdata
+				CheckMenuRadioItem hMenu.3, MenuTab_PageBase, MenuTab_PageBase+length(TabData), n, 0x0100
+				pPageID = n-MenuTab_PageBase
+				gosub*Label_SetMesbox
+			}
+			swbreak
+		swend
+	}
+
+	return
+
+//ページ削除
+*Label_Delete
+
+	tempFile = File
+	File = StartDir+"/~temp.txp"
+
+	data1 = ""
+	data2 = ""
+
+	foreach TabData
+		if pPageID = cnt:continue
+		name = GetTabName(TabData(cnt))
+		data = GetTabData(TabData(cnt))
+		strrep data,"\n","\n"
+		data1 = data1 + (stat+1) + "," + name + "\n"
+		data2 = data2 + data + "\n"
+	loop
+
+	data = data1 + "END\n" + data2
+	notesel data
+	notesave File
+	noteunsel
+
+	
+	gosub*Label_Open
+	
+	File = tempFile
+	FlgUpDate = 1
+
+	gosub*Label_DrawStrings
+	
+	return
+
+//名前変更
+*Label_Rename
+	gsel BufferRename,2
+	cls 1
+	newname = GetTabName(TabData(pPageID))
+	objmode 2,0:font msgothic,18
+	pos 20,20:input newname,280,24,32
+	objmode 2,0:font msgothic,12
+	objsize 80,24,24
+	pos 120,64	:button goto "決定",*Label_Rename2
+	pos 220,64	:button goto "キャンセル",*Label_Rename3
+	return
+
+//名前変更（確定 newname）
+*Label_Rename2
+	if newname = ""{
+		dialog "無効な名前です。"
+		stop
+	}
+	SetTabName TabData(pPageID),newname
+	gsel BufferRename,-1
+	gosub*Label_SetMenu
+	CheckMenuRadioItem hMenu.3, MenuTab_PageBase, MenuTab_PageBase+length(TabData), pPageID, 0x0100
+	stop
+
+//名前変更（キャンセル）
+*Label_Rename3
+	gsel BufferRename,-1
+	stop
+
+//非アクティブになったらウィンドウを消す
+*Label_ReDrawCommand
+	if ginfo(2) ! BufferRename:gsel BufferRename,-1
+	return
+
+//画面サイズ変更受けとり
+*Label_WIndowCommand
+
+	gosub*Label_SetMesbox
+	
+	return
+
+//メッセージボックス
+*Label_SetMesbox
+
+	dName = getpath(File,8)
+	if pPageID ! -1:dPage = GetTabName(TabData(pPageID)):else:dPage = "無題"
+	if File = "null":dName = "無題"
+
+	cls:clrobj
+	gosub*Label_DrawStrings
+	objmode 2,0:font msgothic,15
+	pos 0,0:mesbox boxdata,ginfo_winx,ginfo_winy-20,5,-1
+	objbox = stat
+
+	pboxdata = boxdata
+	
+	return
+
+//メニューバー
+*Label_SetMenu
+	
+	gsel 0
+
+	//一回削除
+	repeat length(hMenu)
+		DestroyMenu hMenu.cnt
+	loop
+
+	//設置
+	CreatePopupMenu
+	hMenu.1 = stat
+		AppendMenu hMenu.1, 0, MenuTab_NewFile, 	"新規作成(&N)";\tCtrl+N"
+		AppendMenu hMenu.1, 0, MenuTab_Open, 			"開く(&O)";\tCtrl+O"
+		AppendMenu hMenu.1, 0, MenuTab_NameSave, 	"名前を付けて保存(&S)"
+		AppendMenu hMenu.1, 0, MenuTab_Save, 			"上書き保存(&A)\tCtrl+S"
+		AppendMenu hMenu.1, 0, MenuTab_MakeTxt,		"テキストファイルとして出力"
+		AppendMenu hMenu.1, 0x0800, 0, ""
+		AppendMenu hMenu.1, 0, MenuTab_Exit, 			"終了(&Q)"
+
+	CreatePopupMenu
+	hMenu.2 = stat
+		AppendMenu hMenu.2, 0, MenuTab_NewPage, 	"新しいページを追加(&N)"
+		AppendMenu hMenu.2, 0, MenuTab_Rename, 		"このページのタイトルを変更"
+		AppendMenu hMenu.2, 0x0800, 0, ""
+		AppendMenu hMenu.2, 0, MenuTab_DelPage,		"このページを削除(&D)"
+
+	CreatePopupMenu
+	hMenu.3 = stat
+		foreach(TabData)
+			AppendMenu hMenu.3, 0, MenuTab_PageBase+cnt,	GetTabName(TabData(cnt))
+		loop
+		CheckMenuRadioItem hMenu.3, MenuTab_PageBase, MenuTab_PageBase+length(TabData), MenuTab_PageBase, 0x0100
+	
+	CreatePopupMenu
+	hMenu.4 = stat
+		AppendMenu hMenu.4, 0, MenuTab_Version, 	"バージョン(&A)"
+
+	CreateMenu
+	hMenu.0 = stat
+		AppendMenu hMenu.0, 0x0010, hMenu.1, "ファイル(&F)"
+		AppendMenu hMenu.0, 0x0010, hMenu.2, "編集(&E)"
+		AppendMenu hMenu.0, 0x0010, hMenu.3, "ページ(&P)"
+		AppendMenu hMenu.0, 0x0010, hMenu.4, "ヘルプ(&H)"
+
+	SetMenu hwnd, hMenu.0
+	DrawMenuBar hwnd
+	
+	return
+
+//テキスト化
+*Label_MakeTxt
+
+	dialog "txt",17,"txt"
+	if stat = 0:return
+
+	txtFile = refstr
+	if getpath(txtFile,2) = "":txtFile = txtFile + ".txt"
+
+	notesel boxdata
+	notesave txtFile
+	noteunsel
+
+	return
+
+*Label_GetDDFile
+	DandD_GetList list
+
+	notesel list
+	noteget a,0
+	if getpath(a,2) = ".txp"{
+		File = a
+		gosub*Label_Open
+	}else{
+		dialog "テキストプラスファイルではありません。",,"Error"
+	}
+	noteunsel
+
+	stop
+	

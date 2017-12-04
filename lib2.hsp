@@ -1,0 +1,52 @@
+#ifndef DragAndDropModuleIncluded
+#define DragAndDropModuleIncluded
+#module DragAndDropModule
+#uselib "shell32.dll"   ;   ★ドラッグ＆ドロップをするAPI
+#func DragAcceptFiles   "DragAcceptFiles"   int, int
+#func DragQueryFile     "DragQueryFileA"    int, int, var, int
+#func DragQueryPoint    "DragQueryPoint"    int, var
+#func DragFinish        "DragFinish"        int
+#define WM_DROPFILES    $0233   ;   DragAndDrop
+
+#define global DandD_SetSubLabel(%1=0) DadmLabel@DragAndDropModule=%1
+
+#deffunc DandD_SetWindow int f
+    if f {
+        oncmd gosub *DadmGetMessageL, WM_DROPFILES
+        DragAcceptFiles hwnd, 1 ;   On
+    } else {
+        DragAcceptFiles hwnd, 0 ;   Off
+    }
+    return
+
+#deffunc DandD_GetList var s
+    s = DadmList
+    return
+
+#defcfunc DandD_GetPath int i
+    notesel DadmList  : noteget sb, i  : noteunsel
+    return sb
+
+#defcfunc DandD_GetInfo int f
+    return DadmInfo(f)
+
+*DadmGetMessageL    ;   メッセージ到着
+    hDrop = wParam  ;   内部ハンドル
+    DadmInfo(3) = ginfo_intid   ;           対象のウィンドウID
+    DragQueryPoint hDrop, DadmInfo(1)   ;   座標
+    DragQueryFile hDrop, -1, DadmInfo, 0    ;   変数はダミー
+    DadmInfo = stat ;                       ファイル数
+    DadmList = ""
+    repeat DadmInfo
+        DragQueryFile hDrop, cnt, sb, 0 ;   文字数は？
+        if sbleng <= stat  : sbleng = stat + 1  : sdim sb, sbleng
+        DragQueryFile hDrop, cnt, sb, sbleng    ;   取得
+        DadmList += sb + "\n"
+    loop
+    DragFinish hDrop    ;   内部ハンドル解放
+    if vartype(DadmLabel) == 1  : gosub DadmLabel   ;   サブルーチン
+    return 0    ;   メッセージ処理完了
+; http://www.tvg.ne.jp/menyukko/
+; Copyright(C) 2011 衣日和 All rights reserved.
+#global
+#endif

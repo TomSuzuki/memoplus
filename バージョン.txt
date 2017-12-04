@@ -1,0 +1,13 @@
+; 行の先頭部分に「;」（半角セミコロン）を付けると、その行はスキップします。
+_FILEVERSION=1.00
+_PRODUCTVERSION=1.00
+Comments=メモ帳プラスエディタ
+CompanyName=BENIKAGE 220
+FileDescription=メモ帳プラスエディタ
+InternalName=memoplus
+LegalCopyright=Copyright (C) 2015-2017 BENIKAGE 220
+LegalTrademarks=
+OriginalFilename=メモ帳プラス.exe
+PrivateBuild=1.00b
+ProductName=メモ帳プラス
+SpecialBuild=1.00b
