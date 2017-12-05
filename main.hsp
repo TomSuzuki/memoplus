@@ -156,6 +156,7 @@
 		if stat = 7:return
 	}
 
+	// すべてのメニューを破棄
 	repeat length(hMenu)
 		DestroyMenu hMenu.cnt
 	loop
@@ -178,14 +179,16 @@
 // 保存（Fileにセーブ）
 *Label_Save
 
+	// 更新情報をリセット
 	FlgUpDate = 0
 	pboxdata = boxdata
 
+	// データの更新
 	SetTabData TabData(pPageID),boxdata
 
+	// 保存のためのデータを構成
 	data1 = ""
 	data2 = ""
-
 	foreach TabData
 		name = GetTabName(TabData(cnt))
 		data = GetTabData(TabData(cnt))
@@ -193,12 +196,14 @@
 		data1 = data1 + (stat+1) + "," + name + "\n"
 		data2 = data2 + data + "\n"
 	loop
-
 	data = data1 + "END\n" + data2
+
+	// 保存
 	notesel data
 	notesave File
 	noteunsel
 
+	// 更新などの文字を初期化
 	gosub*Label_DrawStrings
 
 	return
@@ -308,7 +313,7 @@
 				SetTabData TabData(pPageID),boxdata
 				boxdata = GetTabData(TabData(n-MenuTab_PageBase))
 				objprm objbox,boxdata
-				CheckMenuRadioItem hMenu.3, MenuTab_PageBase, MenuTab_PageBase+length(TabData), n, 0x0100
+				CheckMenuRadioItem hMenu.4, MenuTab_PageBase, MenuTab_PageBase+length(TabData), n, 0x0100
 				pPageID = n-MenuTab_PageBase
 				gosub*Label_SetMesbox
 			}
@@ -373,7 +378,7 @@
 	SetTabName TabData(pPageID),newname
 	gsel BufferRename,-1
 	gosub*Label_SetMenu
-	CheckMenuRadioItem hMenu.3, MenuTab_PageBase, MenuTab_PageBase+length(TabData), pPageID, 0x0100
+	CheckMenuRadioItem hMenu.4, MenuTab_PageBase, MenuTab_PageBase+length(TabData), pPageID, 0x0100
 	stop
 
 // 名前変更（キャンセル）
@@ -420,9 +425,9 @@
 		DestroyMenu hMenu.cnt
 	loop
 
-	//設置
+	// メニューの構成
 	CreatePopupMenu
-	hMenu.1 = stat
+	hMenu.1 = stat	// ファイル
 		AppendMenu hMenu.1, 0, MenuTab_NewFile, 	"新規作成(&N)";\tCtrl+N"
 		AppendMenu hMenu.1, 0, MenuTab_Open, 			"開く(&O)";\tCtrl+O"
 		AppendMenu hMenu.1, 0, MenuTab_NameSave, 	"名前を付けて保存(&S)"
@@ -432,29 +437,29 @@
 		AppendMenu hMenu.1, 0, MenuTab_Exit, 			"終了(&Q)"
 
 	CreatePopupMenu
-	hMenu.2 = stat
+	hMenu.2 = stat	// 編集
 		AppendMenu hMenu.2, 0, MenuTab_NewPage, 	"新しいページを追加(&N)"
 		AppendMenu hMenu.2, 0, MenuTab_Rename, 		"このページのタイトルを変更"
 		AppendMenu hMenu.2, 0x0800, 0, ""
 		AppendMenu hMenu.2, 0, MenuTab_DelPage,		"このページを削除(&D)"
 
 	CreatePopupMenu
-	hMenu.3 = stat
+	hMenu.3 = stat	// 書式
 		AppendMenu hMenu.3, 0, MenuTab_Font, 			"フォント(&F)..."
 
 	CreatePopupMenu
-	hMenu.4 = stat
+	hMenu.4 = stat	// ページ
 		foreach(TabData)
 			AppendMenu hMenu.4, 0, MenuTab_PageBase+cnt,	GetTabName(TabData(cnt))
 		loop
 		CheckMenuRadioItem hMenu.4, MenuTab_PageBase, MenuTab_PageBase+length(TabData), MenuTab_PageBase, 0x0100
 	
 	CreatePopupMenu
-	hMenu.5 = stat
+	hMenu.5 = stat	// ヘルプ
 		AppendMenu hMenu.5, 0, MenuTab_Version, 	"バージョン(&A)"
 
 	CreateMenu
-	hMenu.0 = stat
+	hMenu.0 = stat	// メイン
 		AppendMenu hMenu.0, 0x0010, hMenu.1, "ファイル(&F)"
 		AppendMenu hMenu.0, 0x0010, hMenu.2, "編集(&E)"
 		AppendMenu hMenu.0, 0x0010, hMenu.3, "書式(&O)"
@@ -469,12 +474,15 @@
 // テキスト化
 *Label_MakeTxt
 
+	// 保存する場所を指定
 	dialog "txt",17,"txt"
 	if stat = 0:return
 
+	// ファイル名を整形
 	txtFile = refstr
 	if getpath(txtFile,2) = "":txtFile = txtFile + ".txt"
 
+	// 保存
 	notesel boxdata
 	notesave txtFile
 	noteunsel
