@@ -500,19 +500,19 @@
 // フォント変更のための場所
 *Label_Font
 
-	//ダイアログを開く
+	// ダイアログを開く
 	fontdlg n,$100
 	if stat = 0:return
 	opt = n(1)
 	if n(6) = 1:opt = opt + 4
 	if n(7) = 1:opt = opt + 8
 
-	//データの整形
+	// データの整形
 	FontName = refstr
 	FontSize = n(0)
 	FontStyle = opt
 
-	//コンフィグのセット
+	// コンフィグのセット
 	notesel notedata
 	enoteload "config.csv"
 	SetConfigData notedata
@@ -521,7 +521,7 @@
 		UpdateConfig "FontStyle",str(FontStyle)
 	SaveConfig "config.csv"
 
-	//アップデート
+	// アップデート
 	gosub *Label_SetMesbox
 
 	return
