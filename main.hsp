@@ -31,6 +31,7 @@
 #enum MenuMain_File = 1
 #enum MenuMain_Edit
 #enum MenuMain_Format
+#enum MeneMain_View
 #enum MenuMain_Page
 #enum MenuMain_Help
 
@@ -455,6 +456,10 @@
 		AppendMenu hMenu.MenuMain_Format, 0, MenuTab_Font, 		"フォント(&F)..."
 
 	CreatePopupMenu
+	hMenu.MeneMain_View = stat		// 表示
+		;AppendMenu hMenu.MeneMain_View, 0, MenuTab_Statusbar, 			"ステータスバー(&S)"
+
+	CreatePopupMenu
 	hMenu.MenuMain_Page = stat		// ページ
 		foreach(TabData)
 			AppendMenu hMenu.MenuMain_Page, 0, MenuTab_PageBase+cnt,	GetTabName(TabData(cnt))
@@ -470,6 +475,7 @@
 		AppendMenu hMenu.0, 0x0010, hMenu.MenuMain_File, 		"ファイル(&F)"
 		AppendMenu hMenu.0, 0x0010, hMenu.MenuMain_Edit, 		"編集(&E)"
 		AppendMenu hMenu.0, 0x0010, hMenu.MenuMain_Format, 	"書式(&O)"
+		AppendMenu hMenu.0, 0x0010, hMenu.MeneMain_View, 		"表示(&V)"
 		AppendMenu hMenu.0, 0x0010, hMenu.MenuMain_Page,	 	"ページ(&P)"
 		AppendMenu hMenu.0, 0x0010, hMenu.MenuMain_Help, 		"ヘルプ(&H)"
 
