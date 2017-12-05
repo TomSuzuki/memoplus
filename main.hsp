@@ -237,9 +237,25 @@
 // 開く（Fileにファイルパスが入っている※nullで初期化）
 *Label_Open
 
+	// 読み込むデータに問題がないかチェック（ENDマーカーがあるかチェック）
+	notesel loaddata
+	noteload File
+	flg = 1
+	repeat noteinfo(0)
+		noteget data,cnt
+		if data = "END":flg = 0:break
+	loop
+	if(flg){
+		dialog "ファイルの読み込みに失敗しました。",1
+		return
+	}
+	noteunsel
+
+	// 初期化
 	dimtype TabData,vartype("struct")
 	pPageID = 0
 
+	// ファイルを読み込む
 	if File = "null"{
 		newmod TabData,ModuleTabData,"無題のページ",""
 		boxdata = ""
@@ -518,7 +534,7 @@
 *Label_MakeTxt
 
 	// 保存する場所を指定
-	dialog "txt",17,"txt"
+	dialog "txt",17,"テキスト文書"
 	if stat = 0:return
 
 	// ファイル名を整形
