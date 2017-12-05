@@ -92,8 +92,7 @@
 	ovscreen 0,640,480
 		title TitleMes1
 
-	//
-	cls:clrobj
+	// メインのボックスを配置
 	objmode 2,0:font FontName,FontSize,FontStyle
 	pos 0,0:mesbox boxdata,ginfo_winx,ginfo_winy-20*Statusbar,5,-1
 	objbox = stat
@@ -108,7 +107,7 @@
 	DandD_SetSubLabel *Label_GetDDFile
 
 	// 受け取りコマンドの呼び出し設定
-	oncmd gosub *Label_WIndowCommand, 0x00005
+	oncmd gosub *Label_WindowCommand, 0x00005
 	oncmd gosub *Label_MenuCommand, 	0x00111
 
 	// HSPの割り込みラベル設定
@@ -445,7 +444,7 @@
 	return
 
 // 画面サイズ変更受けとり
-*Label_WIndowCommand
+*Label_WindowCommand
 
 	gosub*Label_SetMesbox
 	
