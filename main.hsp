@@ -313,7 +313,7 @@
 				SetTabData TabData(pPageID),boxdata
 				boxdata = GetTabData(TabData(n-MenuTab_PageBase))
 				objprm objbox,boxdata
-				CheckMenuRadioItem hMenu.3, MenuTab_PageBase, MenuTab_PageBase+length(TabData), n, 0x0100
+				CheckMenuRadioItem hMenu.4, MenuTab_PageBase, MenuTab_PageBase+length(TabData), n, 0x0100
 				pPageID = n-MenuTab_PageBase
 				gosub*Label_SetMesbox
 			}
@@ -378,7 +378,7 @@
 	SetTabName TabData(pPageID),newname
 	gsel BufferRename,-1
 	gosub*Label_SetMenu
-	CheckMenuRadioItem hMenu.3, MenuTab_PageBase, MenuTab_PageBase+length(TabData), pPageID, 0x0100
+	CheckMenuRadioItem hMenu.4, MenuTab_PageBase, MenuTab_PageBase+length(TabData), pPageID, 0x0100
 	stop
 
 // 名前変更（キャンセル）
