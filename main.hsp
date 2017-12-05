@@ -27,6 +27,7 @@
 #enum MenuTab_MakeTxt
 #enum MenuTab_Font
 #enum MenuTab_Statusbar
+#enum MenuTab_PageTab
 #enum MenuTab_PageBase = 1024
 
 // メニューのID割り振り
@@ -71,6 +72,7 @@
 		FontSize = int(LoadConfig("FontSize","15"))
 		FontStyle = int(LoadConfig("FontStyle","0"))
 		Statusbar = int(LoadConfig("Statusbar","0"))
+		PageTab = int(LoadConfig("PageTab","0"))
 	SaveConfig "config.csv"
 
 	// 初期化
@@ -360,6 +362,17 @@
 			CheckMenuItem hMenu.MeneMain_View, MenuTab_Statusbar,Statusbar*8
 			gosub*Label_SetMesbox
 			swbreak
+		case MenuTab_PageTab	//ページタブ
+			PageTab = (PageTab == 0)
+			notesel notedata
+			enoteload "config.csv"
+			SetConfigData notedata
+				UpdateConfig "PageTab",str(PageTab)
+			SaveConfig "config.csv"
+
+			CheckMenuItem hMenu.MeneMain_View, MenuTab_PageTab,PageTab*8
+			gosub*Label_SetMesbox
+			swbreak
 		default								//タブ変更
 			if MenuTab_PageBase <= n{
 				SetTabData TabData(pPageID),boxdata
@@ -501,6 +514,7 @@
 	CreatePopupMenu
 	hMenu.MeneMain_View = stat		// 表示
 		AppendMenu hMenu.MeneMain_View, 0x0008, MenuTab_Statusbar, 	"ステータスバー(&S)"
+		AppendMenu hMenu.MeneMain_View, 0x0008, MenuTab_PageTab, 		"ページタブ"
 
 	CreatePopupMenu
 	hMenu.MenuMain_Page = stat		// ページ
@@ -525,7 +539,9 @@
 	SetMenu hwnd, hMenu.0
 	DrawMenuBar hwnd
 
+	// チェックマーク
 	CheckMenuItem hMenu.MeneMain_View, MenuTab_Statusbar,Statusbar*8
+	CheckMenuItem hMenu.MeneMain_View, MenuTab_PageTab,PageTab*8
 	
 	return
 
