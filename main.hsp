@@ -137,6 +137,9 @@
 
 	if Ctrl = 1{
 		switch iparam
+		case 65	//a
+			sendmsg objinfo(objbox,2),0xB1,0,-1
+			swbreak
 		case 83	//s
 			if File = "null"{
 				gosub*Label_NameSave
