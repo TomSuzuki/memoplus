@@ -6,6 +6,7 @@
 #include "lib.hsp"
 #include "lib2.hsp"
 #include "lib3.hsp"
+#include "obj.as"
 #include "user32.as"
 
 // 設定
@@ -91,6 +92,12 @@
 	ovscreen 0,640,480
 		title TitleMes1
 
+	//
+	cls:clrobj
+	objmode 2,0:font FontName,FontSize,FontStyle
+	pos 0,0:mesbox boxdata,ginfo_winx,ginfo_winy-20*Statusbar,5,-1
+	objbox = stat
+
 	// データの初期化
 	pPageID = -1
 	FlgUpDate = 0
@@ -118,23 +125,29 @@
 // 表示（文字）
 *Label_DrawStrings
 
-	// 背景
-	color 240,240,240:boxf 0,ginfo_winy-20,ginfo_winx,ginfo_winy
-	color 0:font msgothic,15
-	pos 5,ginfo_winy-17:mes dName+" / "+dPage
+	// ステータスバー
+	if(Statusbar){
+		UpdateMesg = "[更新]"
+		if FlgUpDate = 0:UpdateMesg = ""
+		
+		color 240,240,240:boxf 0,ginfo_winy-20,ginfo_winx,ginfo_winy
+		color 0:font msgothic,15
+		pos 5,ginfo_winy-17:mes dName+" / "+dPage
+		x = limit(ginfo_winx-240,ginfo_mesx+64,ginfo_winx)
+		color 210,210,210:line x-24,ginfo_winy-20,x-24,ginfo_winy:color 0
+		pos x,ginfo_winy-17:mes strf("%dページ　%s",1+pPageID,UpdateMesg)
 
-	// 更新があったら文字を表示
-	if FlgUpDate = 1:pos ginfo_winx-5,ginfo_winy-3:edmes "[更新]"
+		// 更新があったら文字を表示
+		;if FlgUpDate = 1:pos ginfo_winx-5,ginfo_winy-3:edmes "[更新]"
+	}
 
 	return
 
 // キー
 *Label_Key
 
-	if pboxdata ! boxdata{
-		FlgUpDate = 1
-		gosub*Label_DrawStrings
-	}
+	sendmsg objinfo(objbox,2), 0xB8	:FlgUpDate = stat
+	if(FlgUpDate):gosub*Label_DrawStrings
 
 	getkey Ctrl,17
 
@@ -159,7 +172,7 @@
 // 終了
 *Label_Exit
 
-	if pboxdata ! boxdata:FlgUpDate = 1	
+	sendmsg objinfo(objbox,2), 0xB8	:FlgUpDate = stat
 
 	if FlgUpDate = 1{
 		dialog "ファイルは更新されています。\n閉じますか？",2
@@ -426,11 +439,10 @@
 	if pPageID ! -1:dPage = GetTabName(TabData(pPageID)):else:dPage = "無題"
 	if File = "null":dName = "無題"
 
-	cls:clrobj
+	size = ginfo_winx,ginfo_winy-20*Statusbar,0,0
+	resizeobj objbox,size,1
+
 	gosub*Label_DrawStrings
-	objmode 2,0:font FontName,FontSize,FontStyle
-	pos 0,0:mesbox boxdata,ginfo_winx,ginfo_winy-20,5,-1
-	objbox = stat
 
 	pboxdata = boxdata
 	
