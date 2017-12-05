@@ -52,8 +52,6 @@
 #endif
 
 
-	;***** フォント選択ダイアログを表示  (fileop27.hsp) *****
-
 #module
 	;▼必要となるAPIや定数の定義
 #uselib "gdi32.dll"
@@ -80,7 +78,7 @@
 	chf(0)  = 60
 	chf(1)  = hwnd
 	chf(3)  = varptr(lpObject)
-	chf(5)  = $41|nOption
+	chf(5)  = $41|$00000000
 	chf(6)  = bmscr(40)
 	chf(12) = $2000
 
