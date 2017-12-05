@@ -25,6 +25,7 @@
 #enum MenuTab_Rename
 #enum MenuTab_MakeTxt
 #enum MenuTab_Font
+#enum MenuTab_Statusbar
 #enum MenuTab_PageBase = 1024
 
 // メニューのID割り振り
@@ -68,6 +69,7 @@
 		FontName = LoadConfig("FontName","ＭＳ ゴシック")
 		FontSize = int(LoadConfig("FontSize","15"))
 		FontStyle = int(LoadConfig("FontStyle","0"))
+		Statusbar = int(LoadConfig("Statusbar","0"))
 	SaveConfig "config.csv"
 
 	// 初期化
@@ -316,6 +318,17 @@
 		case MenuTab_Font			//フォント変更
 			gosub*Label_Font
 			swbreak
+		case MenuTab_Statusbar//ステータスバー
+			Statusbar = (Statusbar == 0)
+			notesel notedata
+			enoteload "config.csv"
+			SetConfigData notedata
+				UpdateConfig "Statusbar",str(Statusbar)
+			SaveConfig "config.csv"
+
+			CheckMenuItem hMenu.MeneMain_View, MenuTab_Statusbar,Statusbar*8
+			gosub*Label_SetMesbox
+			swbreak
 		default								//タブ変更
 			if MenuTab_PageBase <= n{
 				SetTabData TabData(pPageID),boxdata
@@ -457,7 +470,7 @@
 
 	CreatePopupMenu
 	hMenu.MeneMain_View = stat		// 表示
-		;AppendMenu hMenu.MeneMain_View, 0, MenuTab_Statusbar, 			"ステータスバー(&S)"
+		AppendMenu hMenu.MeneMain_View, 0x0008, MenuTab_Statusbar, 	"ステータスバー(&S)"
 
 	CreatePopupMenu
 	hMenu.MenuMain_Page = stat		// ページ
@@ -481,6 +494,8 @@
 
 	SetMenu hwnd, hMenu.0
 	DrawMenuBar hwnd
+
+	CheckMenuItem hMenu.MeneMain_View, MenuTab_Statusbar,Statusbar*8
 	
 	return
 
