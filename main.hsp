@@ -360,8 +360,7 @@
 			}
 			swbreak
 		case MenuTab_NewPage	//新規ページ
-			newmod TabData,ModuleTabData,"無題のページ",""
-			gosub*Label_SetMenu
+			gosub*Label_CreateNewPage
 			swbreak
 		case MenuTab_NewFile	//新規ファイル
 			File = "null"
@@ -530,19 +529,24 @@
 // ページタブ
 *Label_PageTab
 
-	if PageTab != 1:return
-
 	DeleteTab
 
+	if PageTab != 1:return
+
 	pos 0,0
-	CreateTab ginfo_winx, 20, TabBufferBase, $8
+	CreateTab ginfo_winx-60, 20, TabBufferBase, $8
 		hTabControl = stat
 		foreach(TabData)
 			InsertTab GetTabName(TabData(cnt))
 		loop
-
+		
 	gsel 2,1
 	gsel 0
+
+	objsize 20,20
+	pos ginfo_winx-20,0:button gosub "+",*Label_NewPage
+	pos ginfo_winx-40,0:button gosub ">",*Label_PageNext
+	pos ginfo_winx-60,0:button gosub "<",*Label_PageBack
 
 	ChangeTab2 pPageID
 
@@ -556,6 +560,30 @@
 		gosub*Label_ChangePage
 		gsel 0
 	}
+	return
+
+// 新規ページを作成＆作ったページに移動
+*Label_CreateNewPage
+	newmod TabData,ModuleTabData,"無題のページ",""
+
+	gosub*Label_SetMenu
+	gosub*Label_PageTab
+	
+	return
+
+// 新規ページ
+*Label_NewPage
+	gosub*Label_CreateNewPage
+	return
+
+// ページを一つ進める
+*Label_PageNext
+
+	return
+
+// ページを一つ戻す
+*Label_PageBack
+
 	return
 
 // メニューバー
