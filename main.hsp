@@ -27,6 +27,7 @@
 #enum MenuTab_MakeTxt
 #enum MenuTab_Font
 #enum MenuTab_Statusbar
+#enum MenuTab_PageTab
 #enum MenuTab_PageBase = 1024
 
 // メニューのID割り振り
@@ -39,6 +40,7 @@
 
 // 画面のID割り振り
 #enum BufferRename = 1
+#enum TabBufferBase
 
 // 表示文字の設定
 #define TitleMes1	"メモ帳＋"
@@ -71,6 +73,7 @@
 		FontSize = int(LoadConfig("FontSize","15"))
 		FontStyle = int(LoadConfig("FontStyle","0"))
 		Statusbar = int(LoadConfig("Statusbar","0"))
+		PageTab = int(LoadConfig("PageTab","0"))
 	SaveConfig "config.csv"
 
 	// 初期化
@@ -92,10 +95,9 @@
 	ovscreen 0,640,480
 		title TitleMes1
 
-	//
-	cls:clrobj
+	// メインのボックスを配置
 	objmode 2,0:font FontName,FontSize,FontStyle
-	pos 0,0:mesbox boxdata,ginfo_winx,ginfo_winy-20*Statusbar,5,-1
+	pos 0,PageTab*20:mesbox boxdata,ginfo_winx,ginfo_winy-20*Statusbar-PageTab*20,5,-1
 	objbox = stat
 
 	// データの初期化
@@ -107,18 +109,20 @@
 	DandD_SetWindow 1
 	DandD_SetSubLabel *Label_GetDDFile
 
-	// 受け取りコマンドの呼び出し設定
-	oncmd gosub *Label_WIndowCommand, 0x00005
-	oncmd gosub *Label_MenuCommand, 	0x00111
-
-	// HSPの割り込みラベル設定
-	onexit gosub *Label_Exit
-	onkey gosub *Label_Key
-
 	// 初期配置
 	gosub*Label_SetMenu
 	gosub*Label_SetMesbox
 	gosub*Label_Open
+	gosub*Label_PageTab
+
+	// 受け取りコマンドの呼び出し設定
+	oncmd gosub *Label_WindowCommand, 0x00005
+	oncmd gosub *Label_MenuCommand, 	0x00111
+	oncmd gosub *Label_notify, $4E
+
+	// HSPの割り込みラベル設定
+	onexit gosub *Label_Exit
+	onkey gosub *Label_Key
 
 	stop
 
@@ -153,6 +157,9 @@
 
 	if Ctrl = 1{
 		switch iparam
+		case 65	//a
+			sendmsg objinfo(objbox,2),0xB1,0,-1
+			swbreak
 		case 83	//s
 			if File = "null"{
 				gosub*Label_NameSave
@@ -172,7 +179,8 @@
 // 終了
 *Label_Exit
 
-	sendmsg objinfo(objbox,2), 0xB8	:FlgUpDate = stat
+	sendmsg objinfo(objbox,2), 0xB8
+	FlgUpDate = stat
 
 	if FlgUpDate = 1{
 		dialog "ファイルは更新されています。\n閉じますか？",2
@@ -183,6 +191,8 @@
 	repeat length(hMenu)
 		DestroyMenu hMenu.cnt
 	loop
+
+	clrobj
 	
 	end
 
@@ -234,9 +244,25 @@
 // 開く（Fileにファイルパスが入っている※nullで初期化）
 *Label_Open
 
+	// 読み込むデータに問題がないかチェック（ENDマーカーがあるかチェック）
+	notesel loaddata
+	noteload File
+	flg = 1
+	repeat noteinfo(0)
+		noteget data,cnt
+		if data = "END":flg = 0:break
+	loop
+	if(flg){
+		dialog "ファイルの読み込みに失敗しました。",1
+		return
+	}
+	noteunsel
+
+	// 初期化
 	dimtype TabData,vartype("struct")
 	pPageID = 0
 
+	// ファイルを読み込む
 	if File = "null"{
 		newmod TabData,ModuleTabData,"無題のページ",""
 		boxdata = ""
@@ -278,6 +304,39 @@
 
 	gosub*Label_SetMenu
 	gosub*Label_SetMesbox
+	gosub*Label_PageTab
+	
+	return
+
+// テキストとして開く
+*Label_OpenText
+
+	// 初期化
+	dimtype TabData,vartype("struct")
+	pPageID = 0
+
+	// 読み込み
+	notesel loaddata
+	noteload File
+	dimtype NoteLine,vartype("int"),1
+	dimtype NoteName,vartype("str"),1
+	dimtype NoteData,vartype("str"),1
+	NoteLine(0) = noteinfo(0)
+	NoteName(0) = "無題のページ"
+	NoteData(0) = loaddata
+	newmod TabData,ModuleTabData,NoteName(0),NoteData(0)
+	noteunsel
+
+	boxdata = GetTabData(TabData(0))
+	objprm objbox,boxdata
+
+	// その他
+	File = "null"
+	pboxdata = boxdata
+
+	gosub*Label_SetMenu
+	gosub*Label_SetMesbox
+	gosub*Label_PageTab
 
 	return
 
@@ -342,19 +401,38 @@
 			CheckMenuItem hMenu.MeneMain_View, MenuTab_Statusbar,Statusbar*8
 			gosub*Label_SetMesbox
 			swbreak
+		case MenuTab_PageTab	//ページタブ
+			PageTab = (PageTab == 0)
+			notesel notedata
+			enoteload "config.csv"
+			SetConfigData notedata
+				UpdateConfig "PageTab",str(PageTab)
+			SaveConfig "config.csv"
+
+			CheckMenuItem hMenu.MeneMain_View, MenuTab_PageTab,PageTab*8
+			gosub*Label_SetMesbox
+			gosub*Label_PageTab
+			swbreak
 		default								//タブ変更
-			if MenuTab_PageBase <= n{
-				SetTabData TabData(pPageID),boxdata
-				boxdata = GetTabData(TabData(n-MenuTab_PageBase))
-				objprm objbox,boxdata
-				CheckMenuRadioItem hMenu.MenuMain_Page, MenuTab_PageBase, MenuTab_PageBase+length(TabData), n, 0x0100
-				pPageID = n-MenuTab_PageBase
-				gosub*Label_SetMesbox
-			}
+			NextTab = n-MenuTab_PageBase
+			gosub*Label_ChangePage
 			swbreak
 		swend
 	}
 
+	return
+
+// ページ変更
+*Label_ChangePage
+	if 0 <= NextTab{
+		SetTabData TabData(pPageID),boxdata
+		boxdata = GetTabData(TabData(NextTab))
+		objprm objbox,boxdata
+		CheckMenuRadioItem hMenu.MenuMain_Page, MenuTab_PageBase, MenuTab_PageBase+length(TabData), NextTab+MenuTab_PageBase, 0x0100
+		pPageID = NextTab
+		ChangeTab2 NextTab
+		gosub*Label_SetMesbox
+	}
 	return
 
 // ページ削除
@@ -426,9 +504,10 @@
 	return
 
 // 画面サイズ変更受けとり
-*Label_WIndowCommand
+*Label_WindowCommand
 
 	gosub*Label_SetMesbox
+	gosub*Label_PageTab
 	
 	return
 
@@ -439,13 +518,44 @@
 	if pPageID ! -1:dPage = GetTabName(TabData(pPageID)):else:dPage = "無題"
 	if File = "null":dName = "無題"
 
-	size = ginfo_winx,ginfo_winy-20*Statusbar,0,0
-	resizeobj objbox,size,1
+	size = ginfo_winx,ginfo_winy-20*Statusbar-PageTab*20,0,PageTab*20
+	resizeobj objbox,size,0
 
 	gosub*Label_DrawStrings
 
 	pboxdata = boxdata
 	
+	return
+
+// ページタブ
+*Label_PageTab
+
+	if PageTab != 1:return
+
+	DeleteTab
+
+	pos 0,0
+	CreateTab ginfo_winx, 20, TabBufferBase, $8
+		hTabControl = stat
+		foreach(TabData)
+			InsertTab GetTabName(TabData(cnt))
+		loop
+
+	gsel 2,1
+	gsel 0
+
+	ChangeTab2 pPageID
+
+	return
+
+*Label_notify
+	dupptr nmhdr, lparam, 12
+	if nmhdr.0 = hTabControl & nmhdr.2 = -551 {
+		ChangeTab
+		NextTab = stat
+		gosub*Label_ChangePage
+		gsel 0
+	}
 	return
 
 // メニューバー
@@ -483,6 +593,7 @@
 	CreatePopupMenu
 	hMenu.MeneMain_View = stat		// 表示
 		AppendMenu hMenu.MeneMain_View, 0x0008, MenuTab_Statusbar, 	"ステータスバー(&S)"
+		AppendMenu hMenu.MeneMain_View, 0x0008, MenuTab_PageTab, 		"ページタブ"
 
 	CreatePopupMenu
 	hMenu.MenuMain_Page = stat		// ページ
@@ -507,7 +618,9 @@
 	SetMenu hwnd, hMenu.0
 	DrawMenuBar hwnd
 
+	// チェックマーク
 	CheckMenuItem hMenu.MeneMain_View, MenuTab_Statusbar,Statusbar*8
+	CheckMenuItem hMenu.MeneMain_View, MenuTab_PageTab,PageTab*8
 	
 	return
 
@@ -515,7 +628,7 @@
 *Label_MakeTxt
 
 	// 保存する場所を指定
-	dialog "txt",17,"txt"
+	dialog "txt",17,"テキスト文書"
 	if stat = 0:return
 
 	// ファイル名を整形
@@ -535,12 +648,19 @@
 
 	notesel list
 	noteget a,0
-	if getpath(a,2) = ".txp"{
+	switch getpath(a,2+16)
+	case ".txp"
 		File = a
 		gosub*Label_Open
-	}else{
+		swbreak
+	case ".txt"
+		File = a
+		gosub*Label_OpenText
+		swbreak
+	default
 		dialog "テキストプラスファイルではありません。",,"Error"
-	}
+		swbreak
+	swend
 	noteunsel
 
 	stop
@@ -571,6 +691,11 @@
 
 	// アップデート
 	gosub *Label_SetMesbox
+
+	clrobj objbox,objbox
+	objmode 2,0:font FontName,FontSize,FontStyle
+	pos 0,PageTab*20:mesbox boxdata,ginfo_winx,ginfo_winy-20*Statusbar-PageTab*20,5,-1
+	objbox = stat
 
 	return
 	
