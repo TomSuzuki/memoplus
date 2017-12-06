@@ -303,6 +303,39 @@
 
 	gosub*Label_SetMenu
 	gosub*Label_SetMesbox
+	gosub*Label_PageTab
+	
+	return
+
+// テキストとして開く
+*Label_OpenText
+
+	// 初期化
+	dimtype TabData,vartype("struct")
+	pPageID = 0
+
+	// 読み込み
+	notesel loaddata
+	noteload File
+	dimtype NoteLine,vartype("int"),1
+	dimtype NoteName,vartype("str"),1
+	dimtype NoteData,vartype("str"),1
+	NoteLine(0) = noteinfo(0)
+	NoteName(0) = "無題のページ"
+	NoteData(0) = loaddata
+	newmod TabData,ModuleTabData,NoteName(0),NoteData(0)
+	noteunsel
+
+	boxdata = GetTabData(TabData(0))
+	objprm objbox,boxdata
+
+	// その他
+	File = "null"
+	pboxdata = boxdata
+
+	gosub*Label_SetMenu
+	gosub*Label_SetMesbox
+	gosub*Label_PageTab
 
 	return
 
@@ -614,12 +647,19 @@
 
 	notesel list
 	noteget a,0
-	if getpath(a,2) = ".txp"{
+	switch getpath(a,2+16)
+	case ".txp"
 		File = a
 		gosub*Label_Open
-	}else{
+		swbreak
+	case ".txt"
+		File = a
+		gosub*Label_OpenText
+		swbreak
+	default
 		dialog "テキストプラスファイルではありません。",,"Error"
-	}
+		swbreak
+	swend
 	noteunsel
 
 	stop
