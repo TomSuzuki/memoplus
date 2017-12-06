@@ -126,28 +126,6 @@ deleteobj
 	pos s1 - s5,s2 - s6:mes p1
 	pos s1,s2+(s6*2)+4
 	return
-#deffunc tmesUnder str p1	//y座標はginfo_cyを下にする（edmesと同じ高さ）
-	s1 = ginfo(22)	;カレント座標(x)
-	s2 = ginfo(23)	;カレント座標(y)
-	s3 = ginfo(20)	;解像度(x)
-	s4 = ginfo(21)	;解像度(y)
-	pos s3,s4:mes p1
-	s5 = ginfo(14)/2 ;表示(x)
-	s6 = ginfo(15)	 ;表示(y)
-	pos s1 - s5,s2 - s6:mes p1
-	pos s1,s2
-	return
-#deffunc tmesOver str p1	//y座標はginfo_cyを上にする（mesと同じ高さ）
-	s1 = ginfo(22)	;カレント座標(x)
-	s2 = ginfo(23)	;カレント座標(y)
-	s3 = ginfo(20)	;解像度(x)
-	s4 = ginfo(21)	;解像度(y)
-	pos s3,s4:mes p1
-	s5 = ginfo(14)/2 ;表示(x)
-	s6 = 0					 ;表示(y)
-	pos s1 - s5,s2 - s6:mes p1
-	pos s1,s2+(s6*2)+4
-	return
 #deffunc cmes str p1,int p2
 	cx=ginfo_cx
 	cy=ginfo_cy
