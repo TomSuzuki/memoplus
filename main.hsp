@@ -40,6 +40,7 @@
 
 // 画面のID割り振り
 #enum BufferRename = 1
+#enum TabBufferBase
 
 // 表示文字の設定
 #define TitleMes1	"メモ帳＋"
@@ -96,7 +97,7 @@
 
 	// メインのボックスを配置
 	objmode 2,0:font FontName,FontSize,FontStyle
-	pos 0,0:mesbox boxdata,ginfo_winx,ginfo_winy-20*Statusbar,5,-1
+	pos 0,PageTab*20:mesbox boxdata,ginfo_winx,ginfo_winy-20*Statusbar-PageTab*20,5,-1
 	objbox = stat
 
 	// データの初期化
@@ -534,7 +535,7 @@
 	DeleteTab
 
 	pos 0,0
-	CreateTab ginfo_winx, 20, 1, $8
+	CreateTab ginfo_winx, 20, TabBufferBase, $8
 		hTabControl = stat
 		foreach(TabData)
 			InsertTab GetTabName(TabData(cnt))
@@ -690,6 +691,11 @@
 
 	// アップデート
 	gosub *Label_SetMesbox
+
+	clrobj objbox,objbox
+	objmode 2,0:font FontName,FontSize,FontStyle
+	pos 0,PageTab*20:mesbox boxdata,ginfo_winx,ginfo_winy-20*Statusbar-PageTab*20,5,-1
+	objbox = stat
 
 	return
 	
