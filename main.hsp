@@ -40,6 +40,7 @@
 
 // ‰æ–Ê‚ÌIDŠ„‚èU‚è
 #enum BufferRename = 1
+#enum TabBufferBase
 
 // •\¦•¶š‚Ìİ’è
 #define TitleMes1	"ƒƒ‚’ {"
@@ -534,7 +535,7 @@
 	DeleteTab
 
 	pos 0,0
-	CreateTab ginfo_winx, 20, 1, $8
+	CreateTab ginfo_winx, 20, TabBufferBase, $8
 		hTabControl = stat
 		foreach(TabData)
 			InsertTab GetTabName(TabData(cnt))
