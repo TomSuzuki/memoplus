@@ -100,6 +100,12 @@
 	pos 0,PageTab*20:mesbox boxdata,ginfo_winx,ginfo_winy-20*Statusbar-PageTab*20,5,-1
 	objbox = stat
 
+	// ボタンの配置
+	objsize 20,20
+		pos ginfo_winx-20,0:button gosub "+",*Label_NewPage	:IDButton_NewPage = stat
+		pos ginfo_winx-40,0:button gosub ">",*Label_PageNext:IDButton_PageNext = stat
+		pos ginfo_winx-60,0:button gosub "<",*Label_PageBack:IDButton_PageBack = stat
+
 	// データの初期化
 	pPageID = -1
 	FlgUpDate = 0
@@ -360,8 +366,7 @@
 			}
 			swbreak
 		case MenuTab_NewPage	//新規ページ
-			newmod TabData,ModuleTabData,"無題のページ",""
-			gosub*Label_SetMenu
+			gosub*Label_CreateNewPage
 			swbreak
 		case MenuTab_NewFile	//新規ファイル
 			File = "null"
@@ -533,19 +538,29 @@
 // ページタブ
 *Label_PageTab
 
-	if PageTab != 1:return
-
 	DeleteTab
 
+	if PageTab != 1{
+		size = 20,20,-21,-21
+		resizeobj IDButton_NewPage,size
+		resizeobj IDButton_PageNext,size
+		resizeobj IDButton_PageBack,size
+		return
+	}
+
 	pos 0,0
-	CreateTab ginfo_winx, 20, TabBufferBase, $8
+	CreateTab ginfo_winx-60, 20, TabBufferBase, $8
 		hTabControl = stat
 		foreach(TabData)
 			InsertTab GetTabName(TabData(cnt))
 		loop
-
+		
 	gsel 2,1
 	gsel 0
+
+	size = 20,20,ginfo_winx-20,0:	resizeobj IDButton_NewPage,size
+	size = 20,20,ginfo_winx-40,0:	resizeobj IDButton_PageNext,size
+	size = 20,20,ginfo_winx-60,0:	resizeobj IDButton_PageBack,size
 
 	ChangeTab2 pPageID
 
@@ -559,6 +574,35 @@
 		gosub*Label_ChangePage
 		gsel 0
 	}
+	return
+
+// 新規ページを作成＆作ったページに移動
+*Label_CreateNewPage
+	newmod TabData,ModuleTabData,"無題のページ",""
+
+	gosub*Label_SetMenu
+	gosub*Label_PageTab
+	
+	return
+
+// 新規ページ
+*Label_NewPage
+	gosub*Label_CreateNewPage
+	return
+
+// ページを一つ進める
+*Label_PageNext
+	NextTab = pPageID + 1
+	ct = 0:foreach TabData:ct++:loop
+	if ct <= NextTab:return
+	gosub*Label_ChangePage
+	return
+
+// ページを一つ戻す
+*Label_PageBack
+	NextTab = pPageID - 1
+	if NextTab < 0:return
+	gosub*Label_ChangePage
 	return
 
 // メニューバー
