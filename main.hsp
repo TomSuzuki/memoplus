@@ -303,7 +303,8 @@
 
 	gosub*Label_SetMenu
 	gosub*Label_SetMesbox
-
+	gosub*Label_PageTab
+	
 	return
 
 // テキストとして開く
@@ -334,6 +335,7 @@
 
 	gosub*Label_SetMenu
 	gosub*Label_SetMesbox
+	gosub*Label_PageTab
 
 	return
 
