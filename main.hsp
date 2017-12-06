@@ -27,6 +27,7 @@
 #enum MenuTab_MakeTxt
 #enum MenuTab_Font
 #enum MenuTab_Statusbar
+#enum MenuTab_PageTab
 #enum MenuTab_PageBase = 1024
 
 // メニューのID割り振り
@@ -71,6 +72,7 @@
 		FontSize = int(LoadConfig("FontSize","15"))
 		FontStyle = int(LoadConfig("FontStyle","0"))
 		Statusbar = int(LoadConfig("Statusbar","0"))
+		PageTab = int(LoadConfig("PageTab","0"))
 	SaveConfig "config.csv"
 
 	// 初期化
@@ -106,18 +108,20 @@
 	DandD_SetWindow 1
 	DandD_SetSubLabel *Label_GetDDFile
 
-	// 受け取りコマンドの呼び出し設定
-	oncmd gosub *Label_WindowCommand, 0x00005
-	oncmd gosub *Label_MenuCommand, 	0x00111
-
-	// HSPの割り込みラベル設定
-	onexit gosub *Label_Exit
-	onkey gosub *Label_Key
-
 	// 初期配置
 	gosub*Label_SetMenu
 	gosub*Label_SetMesbox
 	gosub*Label_Open
+	gosub*Label_PageTab
+
+	// 受け取りコマンドの呼び出し設定
+	oncmd gosub *Label_WindowCommand, 0x00005
+	oncmd gosub *Label_MenuCommand, 	0x00111
+	oncmd gosub *Label_notify, $4E
+
+	// HSPの割り込みラベル設定
+	onexit gosub *Label_Exit
+	onkey gosub *Label_Key
 
 	stop
 
@@ -174,7 +178,8 @@
 // 終了
 *Label_Exit
 
-	sendmsg objinfo(objbox,2), 0xB8	:FlgUpDate = stat
+	sendmsg objinfo(objbox,2), 0xB8
+	FlgUpDate = stat
 
 	if FlgUpDate = 1{
 		dialog "ファイルは更新されています。\n閉じますか？",2
@@ -185,6 +190,8 @@
 	repeat length(hMenu)
 		DestroyMenu hMenu.cnt
 	loop
+
+	clrobj
 	
 	end
 
@@ -296,7 +303,8 @@
 
 	gosub*Label_SetMenu
 	gosub*Label_SetMesbox
-
+	gosub*Label_PageTab
+	
 	return
 
 // テキストとして開く
@@ -327,6 +335,7 @@
 
 	gosub*Label_SetMenu
 	gosub*Label_SetMesbox
+	gosub*Label_PageTab
 
 	return
 
@@ -391,19 +400,38 @@
 			CheckMenuItem hMenu.MeneMain_View, MenuTab_Statusbar,Statusbar*8
 			gosub*Label_SetMesbox
 			swbreak
+		case MenuTab_PageTab	//ページタブ
+			PageTab = (PageTab == 0)
+			notesel notedata
+			enoteload "config.csv"
+			SetConfigData notedata
+				UpdateConfig "PageTab",str(PageTab)
+			SaveConfig "config.csv"
+
+			CheckMenuItem hMenu.MeneMain_View, MenuTab_PageTab,PageTab*8
+			gosub*Label_SetMesbox
+			gosub*Label_PageTab
+			swbreak
 		default								//タブ変更
-			if MenuTab_PageBase <= n{
-				SetTabData TabData(pPageID),boxdata
-				boxdata = GetTabData(TabData(n-MenuTab_PageBase))
-				objprm objbox,boxdata
-				CheckMenuRadioItem hMenu.MenuMain_Page, MenuTab_PageBase, MenuTab_PageBase+length(TabData), n, 0x0100
-				pPageID = n-MenuTab_PageBase
-				gosub*Label_SetMesbox
-			}
+			NextTab = n-MenuTab_PageBase
+			gosub*Label_ChangePage
 			swbreak
 		swend
 	}
 
+	return
+
+// ページ変更
+*Label_ChangePage
+	if 0 <= NextTab{
+		SetTabData TabData(pPageID),boxdata
+		boxdata = GetTabData(TabData(NextTab))
+		objprm objbox,boxdata
+		CheckMenuRadioItem hMenu.MenuMain_Page, MenuTab_PageBase, MenuTab_PageBase+length(TabData), NextTab+MenuTab_PageBase, 0x0100
+		pPageID = NextTab
+		ChangeTab2 NextTab
+		gosub*Label_SetMesbox
+	}
 	return
 
 // ページ削除
@@ -478,6 +506,7 @@
 *Label_WindowCommand
 
 	gosub*Label_SetMesbox
+	gosub*Label_PageTab
 	
 	return
 
@@ -488,13 +517,44 @@
 	if pPageID ! -1:dPage = GetTabName(TabData(pPageID)):else:dPage = "無題"
 	if File = "null":dName = "無題"
 
-	size = ginfo_winx,ginfo_winy-20*Statusbar,0,0
-	resizeobj objbox,size,1
+	size = ginfo_winx,ginfo_winy-20*Statusbar-PageTab*20,0,PageTab*20
+	resizeobj objbox,size,0
 
 	gosub*Label_DrawStrings
 
 	pboxdata = boxdata
 	
+	return
+
+// ページタブ
+*Label_PageTab
+
+	if PageTab != 1:return
+
+	DeleteTab
+
+	pos 0,0
+	CreateTab ginfo_winx, 20, 1, $8
+		hTabControl = stat
+		foreach(TabData)
+			InsertTab GetTabName(TabData(cnt))
+		loop
+
+	gsel 2,1
+	gsel 0
+
+	ChangeTab2 pPageID
+
+	return
+
+*Label_notify
+	dupptr nmhdr, lparam, 12
+	if nmhdr.0 = hTabControl & nmhdr.2 = -551 {
+		ChangeTab
+		NextTab = stat
+		gosub*Label_ChangePage
+		gsel 0
+	}
 	return
 
 // メニューバー
@@ -532,6 +592,7 @@
 	CreatePopupMenu
 	hMenu.MeneMain_View = stat		// 表示
 		AppendMenu hMenu.MeneMain_View, 0x0008, MenuTab_Statusbar, 	"ステータスバー(&S)"
+		AppendMenu hMenu.MeneMain_View, 0x0008, MenuTab_PageTab, 		"ページタブ"
 
 	CreatePopupMenu
 	hMenu.MenuMain_Page = stat		// ページ
@@ -556,7 +617,9 @@
 	SetMenu hwnd, hMenu.0
 	DrawMenuBar hwnd
 
+	// チェックマーク
 	CheckMenuItem hMenu.MeneMain_View, MenuTab_Statusbar,Statusbar*8
+	CheckMenuItem hMenu.MeneMain_View, MenuTab_PageTab,PageTab*8
 	
 	return
 
