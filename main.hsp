@@ -10,7 +10,7 @@
 #include "user32.as"
 
 // 設定
-#define VersionMes		"Version 1.00"
+#define VersionMes		"Version S"
 #define CopyrightMes	"Copyright 2015-2017 BENIKAGE220"
 
 // タブのID割り振り
@@ -418,6 +418,9 @@
 			gosub*Label_SetMesbox
 			gosub*Label_PageTab
 			swbreak
+		case MenuTab_Printing	//印刷 サイズ2481*3508　文字サイズ34　1240*339　MesboxPos 237*342 MesboxSize 2000or1999
+			dialog boxdata
+			swbreak
 		default								//タブ変更
 			NextTab = n-MenuTab_PageBase
 			gosub*Label_ChangePage
@@ -620,6 +623,8 @@
 		AppendMenu hMenu.MenuMain_File, 0, MenuTab_NameSave, 	"名前を付けて保存(&S)"
 		AppendMenu hMenu.MenuMain_File, 0, MenuTab_Save, 			"上書き保存(&A)\tCtrl+S"
 		AppendMenu hMenu.MenuMain_File, 0, MenuTab_MakeTxt,		"テキストファイルとして出力"
+		AppendMenu hMenu.MenuMain_File, 0x0800, 0, ""
+		AppendMenu hMenu.MenuMain_File, 0, MenuTab_Printing,	"印刷(&P)"
 		AppendMenu hMenu.MenuMain_File, 0x0800, 0, ""
 		AppendMenu hMenu.MenuMain_File, 0, MenuTab_Exit, 			"終了(&Q)"
 
