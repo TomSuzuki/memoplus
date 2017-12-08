@@ -43,7 +43,7 @@
 #enum TabBufferBase
 
 // 表示文字の設定
-#define TitleMes1	"メモ帳＋"
+#define TitleMes1	"メモ帳＋  ["+VersionMes+"]"
 #define TitleMes2	"更新"
 
 // テキストデータを保存するモジュール
