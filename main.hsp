@@ -577,8 +577,12 @@
 *Label_CreateNewPage
 	newmod TabData,ModuleTabData,"–³‘è‚Ìƒy[ƒW",""
 
+	ct = 0:foreach TabData:ct++:loop
+	NextTab = ct-1
+
 	gosub*Label_SetMenu
 	gosub*Label_PageTab
+	gosub*Label_ChangePage
 	
 	return
 
