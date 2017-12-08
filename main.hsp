@@ -156,8 +156,10 @@
 // キー
 *Label_Key
 
-	sendmsg objinfo(objbox,2), 0xB8	:FlgUpDate = stat
-	if(FlgUpDate):gosub*Label_DrawStrings
+	if FlgUpDate = 0{
+		sendmsg objinfo(objbox,2), 0xB8	:FlgUpDate = stat
+		if(FlgUpDate):gosub*Label_DrawStrings
+	}
 
 	getkey Ctrl,17
 
@@ -185,8 +187,10 @@
 // 終了
 *Label_Exit
 
-	sendmsg objinfo(objbox,2), 0xB8
-	FlgUpDate = stat
+	if FlgUpDate = 0{
+		sendmsg objinfo(objbox,2), 0xB8
+		FlgUpDate = stat
+	}
 
 	if FlgUpDate = 1{
 		dialog "ファイルは更新されています。\n閉じますか？",2
@@ -482,12 +486,12 @@
 	pos 20,20:input newname,280,24,32
 	objmode 2,0:font msgothic,12
 	objsize 80,24,24
-	pos 120,64	:button goto "決定",*Label_Rename2
-	pos 220,64	:button goto "キャンセル",*Label_Rename3
+	pos 120,64	:button goto "決定",*Label_RenameOK
+	pos 220,64	:button goto "キャンセル",*Label_RenameCancel
 	return
 
 // 名前変更（確定 newname）
-*Label_Rename2
+*Label_RenameOK
 	if newname = ""{
 		dialog "無効な名前です。"
 		stop
@@ -496,10 +500,13 @@
 	gsel BufferRename,-1
 	gosub*Label_SetMenu
 	CheckMenuRadioItem hMenu.MenuMain_Page, MenuTab_PageBase, MenuTab_PageBase+length(TabData), pPageID, 0x0100
+
+	FlgUpDate = 1
+	gosub*Label_DrawStrings
 	stop
 
 // 名前変更（キャンセル）
-*Label_Rename3
+*Label_RenameCancel
 	gsel BufferRename,-1
 	stop
 
@@ -579,6 +586,8 @@
 
 	ct = 0:foreach TabData:ct++:loop
 	NextTab = ct-1
+
+	FlgUpDate = 1
 
 	gosub*Label_SetMenu
 	gosub*Label_PageTab
@@ -693,6 +702,18 @@
 // ドラッグ＆ドロップの呼び出しラベル
 *Label_GetDDFile
 	DandD_GetList list
+
+	if FlgUpDate = 0{
+		sendmsg objinfo(objbox,2), 0xB8
+		FlgUpDate = stat
+	}
+
+	if FlgUpDate = 1{
+		dialog "ファイルは更新されています。\n変更を保存せずに別のファイルを開きますか？",2
+		if stat = 7:return
+	}
+
+	FlgUpDate = 0
 
 	notesel list
 	noteget a,0
