@@ -102,9 +102,9 @@
 
 	// ボタンの配置
 	objsize 20,20
-		pos ginfo_winx-20,0:button gosub "+",*Label_NewPage	:IDButton_NewPage = stat
-		pos ginfo_winx-40,0:button gosub ">",*Label_PageNext:IDButton_PageNext = stat
-		pos ginfo_winx-60,0:button gosub "<",*Label_PageBack:IDButton_PageBack = stat
+		pos -21,-21:button gosub "+",*Label_NewPage	:IDButton_NewPage = stat
+		pos -21,-21:button gosub ">",*Label_PageNext:IDButton_PageNext = stat
+		pos -21,-21:button gosub "<",*Label_PageBack:IDButton_PageBack = stat
 
 	// データの初期化
 	pPageID = -1
