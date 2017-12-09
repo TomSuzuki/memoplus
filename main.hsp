@@ -66,6 +66,15 @@
 	return
 #global
 
+#module
+#defcfunc CountPageNum
+	ct = 0
+	foreach TabData@
+		ct++
+	loop
+	return ct
+#global
+
 // ここから本体 -----------------------------------------------------------------------------------
 	// コンフィグのロード
 	notesel notedata
@@ -100,6 +109,7 @@
 	// メインウィンドウを作成
 	ovscreen 0,640,480
 		title TitleMes1
+		hwnd_MainWindow = hwnd
 
 	// メインのボックスを配置
 	objmode 2,0:font FontName,FontSize,FontStyle
@@ -193,6 +203,8 @@
 
 // 終了
 *Label_Exit
+
+	EnableWindow hwnd_MainWindow,1
 
 	if ginfo(2) != 0{
 		gsel ginfo(2),-1
@@ -796,24 +808,27 @@
 
 	// ページのリストを作成
 	PageList = ""
+	dimtype PageListID,vartype("int"),CountPageNum()
 	foreach TabData
 		if cnt != 0:PageList = PageList + "\n"
 		PageList = PageList + GetTabName(TabData.cnt)
+		PageListID(cnt) = cnt
 	loop
 
 	// オブジェクトの配置
-	objsize 320,120
+	objsize 320,120:lsNumber = pPageID
 	pos 0,0:listbox lsNumber,120,PageList
+	lsID = stat
 
 	// ボタンの配置
 	objsize 80,24,24
-	pos 220,440	:button gosub "キャンセル",*PageSortingButton	:ButtonIDPageSorting_Cancel = stat
-	pos 120,440	:button gosub "決定",*PageSortingButton				:ButtonIDPageSorting_OK = stat
-	pos 20,260	:button gosub "一つ上へ",*PageSortingButton
-	pos 120,260	:button gosub "一つ下へ",*PageSortingButton
-	pos 220,260	:button gosub "削除",*PageSortingButton
-	pos 20,310	:button gosub "名前で並び替え",*PageSortingButton
-	pos 20,360	:button gosub "新しいページ",*PageSortingButton
+	pos 220,440	:button gosub "キャンセル",*PageSortingButton			:ButtonIDPageSorting_Cancel = stat
+	pos 120,440	:button gosub "決定",*PageSortingButton						:ButtonIDPageSorting_OK = stat
+	pos 20,260	:button gosub "一つ上へ",*PageSortingButton				:ButtonIDPageSorting_Up = stat
+	pos 120,260	:button gosub "一つ下へ",*PageSortingButton				:ButtonIDPageSorting_Down = stat
+	pos 220,260	:button gosub "削除",*PageSortingButton						:ButtonIDPageSorting_Delete = stat
+	pos 20,310	:button gosub "名前で並び替え",*PageSortingButton	:ButtonIDPageSorting_Sort = stat
+	pos 20,360	:button gosub "新しいページ",*PageSortingButton		:ButtonIDPageSorting_New = stat
 
 	// ボタンに対する文字
 	font msgothic,10
@@ -823,16 +838,55 @@
 
 	gsel 0
 
+	EnableWindow hwnd_MainWindow,0
+
 	return
 
 *PageSortingButton
 
 	switch stat
 	case ButtonIDPageSorting_Cancel
+		EnableWindow hwnd_MainWindow,1
 		gsel BufferPageSorting,-1
 		swbreak
 	case ButtonIDPageSorting_OK
 
+		swbreak
+	case ButtonIDPageSorting_Up
+		if lsNumber > 0{
+			temp = PageListID(lsNumber-1)
+			PageListID(lsNumber) = temp
+			PageListID(lsNumber-1) = PageListID(lsNumber)
+			gsel BufferPageSorting
+			sdim listbox_text
+			sendmsg objinfo(lsID,2),$188:index = stat
+			sendmsg objinfo(lsID,2),$189,index,varptr(listbox_text)
+			sendmsg objinfo(lsID,2),$182,index
+			sendmsg objinfo(lsID,2),$181,index-1,listbox_text
+			sendmsg objinfo(lsID,2),$186,index-1
+			gsel 0
+		}
+		swbreak
+	case ButtonIDPageSorting_Down
+		if lsNumber < CountPageNum(){
+			temp = PageListID(lsNumber+1)
+			PageListID(lsNumber) = temp
+			PageListID(lsNumber+1) = PageListID(lsNumber)
+			gsel BufferPageSorting
+			sdim listbox_text
+			sendmsg objinfo(lsID,2),$188:index = stat
+			sendmsg objinfo(lsID,2),$189,index,varptr(listbox_text)
+			sendmsg objinfo(lsID,2),$182,index
+			sendmsg objinfo(lsID,2),$181,index+1,listbox_text
+			sendmsg objinfo(lsID,2),$186,index+1
+			gsel 0
+		}
+		swbreak
+	case ButtonIDPageSorting_Delete
+		swbreak
+	case ButtonIDPageSorting_Sort
+		swbreak
+	case ButtonIDPageSorting_New
 		swbreak
 	swend
 
