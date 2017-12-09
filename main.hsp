@@ -559,7 +559,7 @@
 			InsertTab GetTabName(TabData(cnt))
 		loop
 		
-	gsel 2,1
+	gsel TabBufferBase,1
 	gsel 0
 
 	size = 20,20,ginfo_winx-20,0:	resizeobj IDButton_NewPage,size
