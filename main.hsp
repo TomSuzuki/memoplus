@@ -808,11 +808,11 @@
 
 	// ページのリストを作成
 	PageList = ""
-	dimtype PageListID,vartype("int"),CountPageNum()
+	dimtype PageListData,vartype("str"),CountPageNum()
 	foreach TabData
 		if cnt != 0:PageList = PageList + "\n"
 		PageList = PageList + GetTabName(TabData.cnt)
-		PageListID(cnt) = cnt
+		PageListData(cnt) = GetTabData(TabData.cnt)
 	loop
 
 	// オブジェクトの配置
@@ -844,7 +844,14 @@
 
 *PageSortingButton
 
-	switch stat
+	GetCommand = stat
+
+	gsel BufferPageSorting
+	sendmsg objinfo(lsID,2),$18B
+	ListPageNum = stat
+	gsel 0
+
+	switch GetCommand
 	case ButtonIDPageSorting_Cancel
 		EnableWindow hwnd_MainWindow,1
 		gsel BufferPageSorting,-1
@@ -854,9 +861,9 @@
 		swbreak
 	case ButtonIDPageSorting_Up
 		if lsNumber > 0{
-			temp = PageListID(lsNumber-1)
-			PageListID(lsNumber) = temp
-			PageListID(lsNumber-1) = PageListID(lsNumber)
+			temp = PageListData(lsNumber-1)
+			PageListData(lsNumber) = temp
+			PageListData(lsNumber-1) = PageListData(lsNumber)
 			gsel BufferPageSorting
 			sdim listbox_text
 			sendmsg objinfo(lsID,2),$188:index = stat
@@ -869,10 +876,10 @@
 		}
 		swbreak
 	case ButtonIDPageSorting_Down
-		if lsNumber < CountPageNum()-1{
-			temp = PageListID(lsNumber+1)
-			PageListID(lsNumber) = temp
-			PageListID(lsNumber+1) = PageListID(lsNumber)
+		if lsNumber < ListPageNum-1{
+			temp = PageListData(lsNumber+1)
+			PageListData(lsNumber) = temp
+			PageListData(lsNumber+1) = PageListData(lsNumber)
 			gsel BufferPageSorting
 			sdim listbox_text
 			sendmsg objinfo(lsID,2),$188:index = stat
@@ -885,10 +892,23 @@
 		}
 		swbreak
 	case ButtonIDPageSorting_Delete
+		gsel BufferPageSorting
+		sendmsg objinfo(lsID,2),$188:index = stat
+		if index != -1 && ListPageNum > 1{
+			sendmsg objinfo(lsID,2),$182,index
+			repeat ListPageNum-index-1,index;ここあってるかわからん
+				PageListData(cnt) = PageListData(cnt+1)
+			loop
+		}
+		gsel 0
 		swbreak
 	case ButtonIDPageSorting_Sort
 		swbreak
 	case ButtonIDPageSorting_New
+		PageListData(ListPageNum) = ""
+		gsel BufferPageSorting
+		sendmsg objinfo(lsID,2),$180,,"無題のページ"
+		gsel 0
 		swbreak
 	swend
 
