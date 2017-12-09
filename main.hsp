@@ -28,6 +28,7 @@
 #enum MenuTab_Font
 #enum MenuTab_Statusbar
 #enum MenuTab_PageTab
+#enum MenuTab_PageSorting
 #enum MenuTab_PageBase = 1024
 
 // メニューのID割り振り
@@ -39,7 +40,8 @@
 #enum MenuMain_Help
 
 // 画面のID割り振り
-#enum BufferRename = 1
+#enum BufferPageSorting = 1
+#enum BufferRename
 #enum TabBufferBase
 
 // 表示文字の設定
@@ -88,8 +90,12 @@
 	if strsize = -1:File = "null"	//存在しないならファイル名をnullにする
 
 	// 名前変更用ウィンドウを作成
-	screen BufferRename,320,96,2
+	screen BufferRename,320,96,2+4
 		title "名前の変更"
+
+	// ソート用ウィンドウ
+	screen BufferPageSorting,320,480,2+4
+		title "ページの並べ替え"
 
 	// メインウィンドウを作成
 	ovscreen 0,640,480
@@ -157,6 +163,7 @@
 *Label_Key
 
 	if FlgUpDate = 0{
+		gsel 0
 		sendmsg objinfo(objbox,2), 0xB8	:FlgUpDate = stat
 		if(FlgUpDate):gosub*Label_DrawStrings
 	}
@@ -187,7 +194,13 @@
 // 終了
 *Label_Exit
 
+	if ginfo(2) != 0{
+		gsel ginfo(2),-1
+		return
+	}
+
 	if FlgUpDate = 0{
+		gsel 0
 		sendmsg objinfo(objbox,2), 0xB8
 		FlgUpDate = stat
 	}
@@ -198,6 +211,7 @@
 	}
 
 	// すべてのメニューを破棄
+	gsel 0
 	repeat length(hMenu)
 		DestroyMenu hMenu.cnt
 	loop
@@ -392,6 +406,9 @@
 				gosub*Label_Save
 			}
 			swbreak
+		case MenuTab_PageSorting	//ページの並べ替え
+			gosub*PageSorting
+			swbreak
 		case MenuTab_DelPage	//削除
 			gosub*Label_Delete
 			gosub*Label_SetMenu
@@ -559,7 +576,7 @@
 			InsertTab GetTabName(TabData(cnt))
 		loop
 		
-	gsel 2,1
+	gsel TabBufferBase,1
 	gsel 0
 
 	size = 20,20,ginfo_winx-20,0:	resizeobj IDButton_NewPage,size
@@ -638,10 +655,12 @@
 
 	CreatePopupMenu
 	hMenu.MenuMain_Edit = stat		// 編集
-		AppendMenu hMenu.MenuMain_Edit, 0, MenuTab_NewPage, 	"新しいページを追加(&N)"
-		AppendMenu hMenu.MenuMain_Edit, 0, MenuTab_Rename, 		"このページのタイトルを変更"
-		AppendMenu hMenu.MenuMain_Edit, 0x0800, 0, 						""
-		AppendMenu hMenu.MenuMain_Edit, 0, MenuTab_DelPage,		"このページを削除(&D)"
+		AppendMenu hMenu.MenuMain_Edit, 0, MenuTab_NewPage, 		"新しいページを追加(&N)"
+		AppendMenu hMenu.MenuMain_Edit, 0, MenuTab_Rename, 			"このページのタイトルを変更"
+		AppendMenu hMenu.MenuMain_Edit, 0x0800, 0, 							""
+		AppendMenu hMenu.MenuMain_Edit, 0, MenuTab_PageSorting, "ページの並べ替え"
+		AppendMenu hMenu.MenuMain_Edit, 0x0800, 0, 							""
+		AppendMenu hMenu.MenuMain_Edit, 0, MenuTab_DelPage,			"このページを削除(&D)"
 
 	CreatePopupMenu
 	hMenu.MenuMain_Format = stat	// 書式
@@ -704,6 +723,7 @@
 	DandD_GetList list
 
 	if FlgUpDate = 0{
+		gsel 0
 		sendmsg objinfo(objbox,2), 0xB8
 		FlgUpDate = stat
 	}
@@ -765,6 +785,56 @@
 	objmode 2,0:font FontName,FontSize,FontStyle
 	pos 0,PageTab*20:mesbox boxdata,ginfo_winx,ginfo_winy-20*Statusbar-PageTab*20,5,-1
 	objbox = stat
+
+	return
+
+//ページの並べ替え
+*PageSorting
+
+	gsel BufferPageSorting,2
+	cls 1
+
+	// ページのリストを作成
+	PageList = ""
+	foreach TabData
+		if cnt != 0:PageList = PageList + "\n"
+		PageList = PageList + GetTabName(TabData.cnt)
+	loop
+
+	// オブジェクトの配置
+	objsize 320,120
+	pos 0,0:listbox lsNumber,120,PageList
+
+	// ボタンの配置
+	objsize 80,24,24
+	pos 220,440	:button gosub "キャンセル",*PageSortingButton	:ButtonIDPageSorting_Cancel = stat
+	pos 120,440	:button gosub "決定",*PageSortingButton				:ButtonIDPageSorting_OK = stat
+	pos 20,260	:button gosub "一つ上へ",*PageSortingButton
+	pos 120,260	:button gosub "一つ下へ",*PageSortingButton
+	pos 220,260	:button gosub "削除",*PageSortingButton
+	pos 20,310	:button gosub "名前で並び替え",*PageSortingButton
+	pos 20,360	:button gosub "新しいページ",*PageSortingButton
+
+	// ボタンに対する文字
+	font msgothic,10
+	pos 10,245	:mes "選択しているページを"
+	pos 10,295	:mes "すべてのページを"
+	pos 10,345	:mes "その他の作業"
+
+	gsel 0
+
+	return
+
+*PageSortingButton
+
+	switch stat
+	case ButtonIDPageSorting_Cancel
+		gsel BufferPageSorting,-1
+		swbreak
+	case ButtonIDPageSorting_OK
+
+		swbreak
+	swend
 
 	return
 	
