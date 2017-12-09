@@ -864,11 +864,12 @@
 			sendmsg objinfo(lsID,2),$182,index
 			sendmsg objinfo(lsID,2),$181,index-1,listbox_text
 			sendmsg objinfo(lsID,2),$186,index-1
+			lsNumber = lsNumber - 1
 			gsel 0
 		}
 		swbreak
 	case ButtonIDPageSorting_Down
-		if lsNumber < CountPageNum(){
+		if lsNumber < CountPageNum()-1{
 			temp = PageListID(lsNumber+1)
 			PageListID(lsNumber) = temp
 			PageListID(lsNumber+1) = PageListID(lsNumber)
@@ -879,6 +880,7 @@
 			sendmsg objinfo(lsID,2),$182,index
 			sendmsg objinfo(lsID,2),$181,index+1,listbox_text
 			sendmsg objinfo(lsID,2),$186,index+1
+			lsNumber = lsNumber + 1
 			gsel 0
 		}
 		swbreak
