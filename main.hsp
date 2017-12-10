@@ -28,6 +28,7 @@
 #enum MenuTab_Font
 #enum MenuTab_Statusbar
 #enum MenuTab_PageTab
+#enum MenuTab_PageSorting
 #enum MenuTab_PageBase = 1024
 
 // メニューのID割り振り
@@ -39,7 +40,8 @@
 #enum MenuMain_Help
 
 // 画面のID割り振り
-#enum BufferRename = 1
+#enum BufferPageSorting = 1
+#enum BufferRename
 #enum TabBufferBase
 
 // 表示文字の設定
@@ -62,6 +64,15 @@
 #modfunc SetTabData str p1
 	data = p1
 	return
+#global
+
+#module
+#defcfunc CountPageNum
+	ct = 0
+	foreach TabData@
+		ct++
+	loop
+	return ct
 #global
 
 // ここから本体 -----------------------------------------------------------------------------------
@@ -88,12 +99,17 @@
 	if strsize = -1:File = "null"	//存在しないならファイル名をnullにする
 
 	// 名前変更用ウィンドウを作成
-	screen BufferRename,320,96,2
+	screen BufferRename,320,96,2+4
 		title "名前の変更"
+
+	// ソート用ウィンドウ
+	screen BufferPageSorting,320,480,2+4
+		title "ページの並べ替え"
 
 	// メインウィンドウを作成
 	ovscreen 0,640,480
 		title TitleMes1
+		hwnd_MainWindow = hwnd
 
 	// メインのボックスを配置
 	objmode 2,0:font FontName,FontSize,FontStyle
@@ -157,6 +173,7 @@
 *Label_Key
 
 	if FlgUpDate = 0{
+		gsel 0
 		sendmsg objinfo(objbox,2), 0xB8	:FlgUpDate = stat
 		if(FlgUpDate):gosub*Label_DrawStrings
 	}
@@ -187,7 +204,15 @@
 // 終了
 *Label_Exit
 
+	EnableWindow hwnd_MainWindow,1
+
+	if ginfo(2) != 0{
+		gsel ginfo(2),-1
+		return
+	}
+
 	if FlgUpDate = 0{
+		gsel 0
 		sendmsg objinfo(objbox,2), 0xB8
 		FlgUpDate = stat
 	}
@@ -198,6 +223,7 @@
 	}
 
 	// すべてのメニューを破棄
+	gsel 0
 	repeat length(hMenu)
 		DestroyMenu hMenu.cnt
 	loop
@@ -391,6 +417,9 @@
 			}else{
 				gosub*Label_Save
 			}
+			swbreak
+		case MenuTab_PageSorting	//ページの並べ替え
+			gosub*PageSorting
 			swbreak
 		case MenuTab_DelPage	//削除
 			gosub*Label_Delete
@@ -638,10 +667,12 @@
 
 	CreatePopupMenu
 	hMenu.MenuMain_Edit = stat		// 編集
-		AppendMenu hMenu.MenuMain_Edit, 0, MenuTab_NewPage, 	"新しいページを追加(&N)"
-		AppendMenu hMenu.MenuMain_Edit, 0, MenuTab_Rename, 		"このページのタイトルを変更"
-		AppendMenu hMenu.MenuMain_Edit, 0x0800, 0, 						""
-		AppendMenu hMenu.MenuMain_Edit, 0, MenuTab_DelPage,		"このページを削除(&D)"
+		AppendMenu hMenu.MenuMain_Edit, 0, MenuTab_NewPage, 		"新しいページを追加(&N)"
+		AppendMenu hMenu.MenuMain_Edit, 0, MenuTab_Rename, 			"このページのタイトルを変更"
+		AppendMenu hMenu.MenuMain_Edit, 0x0800, 0, 							""
+		AppendMenu hMenu.MenuMain_Edit, 0, MenuTab_PageSorting, "ページの並べ替え"
+		AppendMenu hMenu.MenuMain_Edit, 0x0800, 0, 							""
+		AppendMenu hMenu.MenuMain_Edit, 0, MenuTab_DelPage,			"このページを削除(&D)"
 
 	CreatePopupMenu
 	hMenu.MenuMain_Format = stat	// 書式
@@ -704,6 +735,7 @@
 	DandD_GetList list
 
 	if FlgUpDate = 0{
+		gsel 0
 		sendmsg objinfo(objbox,2), 0xB8
 		FlgUpDate = stat
 	}
@@ -765,6 +797,171 @@
 	objmode 2,0:font FontName,FontSize,FontStyle
 	pos 0,PageTab*20:mesbox boxdata,ginfo_winx,ginfo_winy-20*Statusbar-PageTab*20,5,-1
 	objbox = stat
+
+	return
+
+//ページの並べ替え
+*PageSorting
+
+	gsel BufferPageSorting,2
+	cls 1
+
+	// ページのリストを作成
+	PageList = ""
+	dimtype PageListData,vartype("str"),CountPageNum()
+	foreach TabData
+		if cnt != 0:PageList = PageList + "\n"
+		PageList = PageList + GetTabName(TabData.cnt)
+		PageListData(cnt) = GetTabData(TabData.cnt)
+	loop
+
+	// オブジェクトの配置
+	objsize 320,120:lsNumber = pPageID
+	pos 0,0:listbox lsNumber,120,PageList
+	lsID = stat
+
+	// ボタンの配置
+	objsize 80,24,24
+	pos 220,440	:button gosub "キャンセル",*PageSortingButton			:ButtonIDPageSorting_Cancel = stat
+	pos 120,440	:button gosub "決定",*PageSortingButton						:ButtonIDPageSorting_OK = stat
+	pos 20,260	:button gosub "一つ上へ",*PageSortingButton				:ButtonIDPageSorting_Up = stat
+	pos 120,260	:button gosub "一つ下へ",*PageSortingButton				:ButtonIDPageSorting_Down = stat
+	pos 220,260	:button gosub "削除",*PageSortingButton						:ButtonIDPageSorting_Delete = stat
+	pos 20,310	:button gosub "名前で並び替え",*PageSortingButton	:ButtonIDPageSorting_Sort = stat
+	pos 20,360	:button gosub "新しいページ",*PageSortingButton		:ButtonIDPageSorting_New = stat
+
+	// ボタンに対する文字
+	font msgothic,10
+	pos 10,245	:mes "選択しているページを"
+	pos 10,295	:mes "すべてのページを"
+	pos 10,345	:mes "その他の作業"
+
+	gsel 0
+
+	EnableWindow hwnd_MainWindow,0
+
+	return
+
+*PageSortingButton
+
+	GetCommand = stat
+
+	gsel BufferPageSorting
+	sendmsg objinfo(lsID,2),$18B
+	ListPageNum = stat
+	gsel 0
+
+	switch GetCommand
+	case ButtonIDPageSorting_Cancel
+		EnableWindow hwnd_MainWindow,1
+		gsel BufferPageSorting,-1
+		gsel 0
+		swbreak
+	case ButtonIDPageSorting_OK
+		gsel BufferPageSorting
+
+		dimtype ListName,vartype("str"),ListPageNum
+		repeat ListPageNum
+			sendmsg objinfo(lsID,2),$189,cnt,varptr(ListName(cnt))
+		loop
+
+		gsel 0
+
+		// 初期化
+		dimtype TabData,vartype("struct")
+		pPageID = 0
+	
+		// 配置
+		repeat ListPageNum
+			newmod TabData,ModuleTabData,ListName(cnt),PageListData(cnt)
+		loop
+	
+		boxdata = GetTabData(TabData(0))
+		objprm objbox,boxdata
+	
+		// その他
+		File = "null"
+		pboxdata = boxdata
+		FlgUpDate = 1
+
+		EnableWindow hwnd_MainWindow,1
+		gsel BufferPageSorting,-1
+		gsel 0
+
+		gosub*Label_SetMenu
+		gosub*Label_SetMesbox
+		gosub*Label_PageTab
+		
+		swbreak
+	case ButtonIDPageSorting_Up
+		if lsNumber > 0{
+			temp = PageListData(lsNumber-1)
+			PageListData(lsNumber-1) = PageListData(lsNumber)
+			PageListData(lsNumber) = temp
+			gsel BufferPageSorting
+			sdim listbox_text
+			sendmsg objinfo(lsID,2),$188:index = stat
+			sendmsg objinfo(lsID,2),$189,index,varptr(listbox_text)
+			sendmsg objinfo(lsID,2),$182,index
+			sendmsg objinfo(lsID,2),$181,index-1,listbox_text
+			sendmsg objinfo(lsID,2),$186,index-1
+			lsNumber = lsNumber - 1
+			gsel 0
+		}
+		swbreak
+	case ButtonIDPageSorting_Down
+		if lsNumber < ListPageNum-1{
+			temp = PageListData(lsNumber+1)
+			PageListData(lsNumber+1) = PageListData(lsNumber)
+			PageListData(lsNumber) = temp
+			gsel BufferPageSorting
+			sdim listbox_text
+			sendmsg objinfo(lsID,2),$188:index = stat
+			sendmsg objinfo(lsID,2),$189,index,varptr(listbox_text)
+			sendmsg objinfo(lsID,2),$182,index
+			sendmsg objinfo(lsID,2),$181,index+1,listbox_text
+			sendmsg objinfo(lsID,2),$186,index+1
+			lsNumber = lsNumber + 1
+			gsel 0
+		}
+		swbreak
+	case ButtonIDPageSorting_Delete
+		gsel BufferPageSorting
+		sendmsg objinfo(lsID,2),$188:index = stat
+		if index != -1 && ListPageNum > 1{
+			sendmsg objinfo(lsID,2),$182,index
+			repeat ListPageNum-index-1,index;ここあってるかわからん
+				PageListData(cnt) = PageListData(cnt+1)
+			loop
+		}
+		gsel 0
+		swbreak
+	case ButtonIDPageSorting_Sort
+		gsel BufferPageSorting
+		sdim ListName
+		sdim temp
+		dimtype PageListDataTemp,vartype("str"),ListPageNum
+		repeat ListPageNum
+			if cnt != 0:ListName = ListName + "\n"
+			sendmsg objinfo(lsID,2),$189,cnt,varptr(temp)
+			ListName = ListName + temp
+			PageListDataTemp(cnt) = PageListData(cnt)
+		loop
+		sortnote ListName,0
+		repeat ListPageNum
+			sortget a,cnt
+			PageListData(a) = PageListDataTemp(cnt)
+		loop
+		objprm lsID,ListName
+		gsel 0
+		swbreak
+	case ButtonIDPageSorting_New
+		PageListData(ListPageNum) = ""
+		gsel BufferPageSorting
+		sendmsg objinfo(lsID,2),$180,,"無題のページ"
+		gsel 0
+		swbreak
+	swend
 
 	return
 	
