@@ -880,7 +880,6 @@
 		objprm objbox,boxdata
 	
 		// ‚»‚Ì‘¼
-		File = "null"
 		pboxdata = boxdata
 		FlgUpDate = 1
 
