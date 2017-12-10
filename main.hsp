@@ -855,15 +855,49 @@
 	case ButtonIDPageSorting_Cancel
 		EnableWindow hwnd_MainWindow,1
 		gsel BufferPageSorting,-1
+		gsel 0
 		swbreak
 	case ButtonIDPageSorting_OK
+		gsel BufferPageSorting
 
+		dimtype ListName,vartype("str"),ListPageNum
+		repeat ListPageNum
+			sendmsg objinfo(lsID,2),$189,cnt,varptr(ListName(cnt))
+		loop
+
+		gsel 0
+
+		// ‰Šú‰»
+		dimtype TabData,vartype("struct")
+		pPageID = 0
+	
+		// ”z’u
+		repeat ListPageNum
+			newmod TabData,ModuleTabData,ListName(cnt),PageListData(cnt)
+		loop
+	
+		boxdata = GetTabData(TabData(0))
+		objprm objbox,boxdata
+	
+		// ‚»‚Ì‘¼
+		File = "null"
+		pboxdata = boxdata
+		FlgUpDate = 1
+
+		EnableWindow hwnd_MainWindow,1
+		gsel BufferPageSorting,-1
+		gsel 0
+
+		gosub*Label_SetMenu
+		gosub*Label_SetMesbox
+		gosub*Label_PageTab
+		
 		swbreak
 	case ButtonIDPageSorting_Up
 		if lsNumber > 0{
 			temp = PageListData(lsNumber-1)
-			PageListData(lsNumber) = temp
 			PageListData(lsNumber-1) = PageListData(lsNumber)
+			PageListData(lsNumber) = temp
 			gsel BufferPageSorting
 			sdim listbox_text
 			sendmsg objinfo(lsID,2),$188:index = stat
@@ -878,8 +912,8 @@
 	case ButtonIDPageSorting_Down
 		if lsNumber < ListPageNum-1{
 			temp = PageListData(lsNumber+1)
-			PageListData(lsNumber) = temp
 			PageListData(lsNumber+1) = PageListData(lsNumber)
+			PageListData(lsNumber) = temp
 			gsel BufferPageSorting
 			sdim listbox_text
 			sendmsg objinfo(lsID,2),$188:index = stat
@@ -903,6 +937,23 @@
 		gsel 0
 		swbreak
 	case ButtonIDPageSorting_Sort
+		gsel BufferPageSorting
+		sdim ListName
+		sdim temp
+		dimtype PageListDataTemp,vartype("str"),ListPageNum
+		repeat ListPageNum
+			if cnt != 0:ListName = ListName + "\n"
+			sendmsg objinfo(lsID,2),$189,cnt,varptr(temp)
+			ListName = ListName + temp
+			PageListDataTemp(cnt) = PageListData(cnt)
+		loop
+		sortnote ListName,0
+		repeat ListPageNum
+			sortget a,cnt
+			PageListData(a) = PageListDataTemp(cnt)
+		loop
+		objprm lsID,ListName
+		gsel 0
 		swbreak
 	case ButtonIDPageSorting_New
 		PageListData(ListPageNum) = ""
