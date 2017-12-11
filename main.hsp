@@ -534,12 +534,15 @@
 	}
 	SetTabName TabData(pPageID),newname
 	gsel BufferRename,-1
-	gosub*Label_SetMenu
-	CheckMenuRadioItem hMenu.MenuMain_Page, MenuTab_PageBase, MenuTab_PageBase+length(TabData), pPageID, 0x0100
 
 	FlgUpDate = 1
+
+	// オブジェクトの更新
+	gsel 0
 	gosub*Label_DrawStrings
 	gosub*Label_PageTab
+	gosub*Label_SetMenu
+	CheckMenuRadioItem hMenu.MenuMain_Page, MenuTab_PageBase, MenuTab_PageBase+length(TabData), MenuTab_PageBase+pPageID, 0x0100
 	
 	return
 
