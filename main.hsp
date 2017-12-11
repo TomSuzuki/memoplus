@@ -95,11 +95,12 @@
 
 	// 初期データ
 	StartDir = dir_cur	//カレントディレクトリ
-	File = dir_cmdline	//カレントファイル
-	File = "./testdata/a.txp"	;テストデータの読み込み
-	strrep File,"\"",""	//パスの整形
-	exist File					//ファイルが存在するか？
-	if strsize = -1:File = "null"	//存在しないならファイル名をnullにする
+	OpenFile = dir_cmdline	//カレントファイル
+	OpenFile = "./testdata/a.txp"	;テストデータの読み込み
+	;OpenFile = "./config.csv"
+	strrep OpenFile,"\"",""	//パスの整形
+	exist OpenFile					//ファイルが存在するか？
+	if strsize = -1:OpenFile = "null"	//存在しないならファイル名をnullにする
 
 	// 名前変更用ウィンドウを作成
 	screen BufferRename,320,96,2+4
@@ -135,9 +136,9 @@
 	DandD_SetSubLabel *Label_GetDDFile
 
 	// 初期配置
+	gosub*Label_LoadFileTypeSelect
 	gosub*Label_SetMenu
 	gosub*Label_SetMesbox
-	gosub*Label_Open
 	gosub*Label_PageTab
 
 	// 受け取りコマンドの呼び出し設定
@@ -746,6 +747,7 @@
 // ドラッグ＆ドロップの呼び出しラベル
 *Label_GetDDFile
 	DandD_GetList list
+	
 
 	if FlgUpDate = 0{
 		gsel 0
@@ -762,22 +764,31 @@
 
 	notesel list
 	noteget a,0
-	switch getpath(a,2+16)
+	gosub*Label_LoadFileTypeSelect
+	OpenFile = a
+	noteunsel
+
+	return
+
+// ファイルの選別
+*Label_LoadFileTypeSelect
+	
+	switch getpath(OpenFile,2+16)
 	case ".txp"
-		File = a
+		File = OpenFile
 		gosub*Label_Open
 		swbreak
 	case ".txt"
-		File = a
+		File = OpenFile
 		gosub*Label_OpenText
 		swbreak
 	default
+		File = ""
 		dialog "テキストプラスファイルではありません。",,"Error"
 		swbreak
 	swend
-	noteunsel
 
-	stop
+	return
 
 // フォント変更のための場所
 *Label_Font
