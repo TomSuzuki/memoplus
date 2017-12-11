@@ -48,6 +48,9 @@
 #define TitleMes1	"メモ帳＋  ["+VersionMes+"]"
 #define TitleMes2	"更新"
 
+// 仮ファイル名
+#define FileTemp	StartDir+"/~temp.txp"
+
 // テキストデータを保存するモジュール
 #module ModuleTabData name,data
 #modinit str p1,str p2
@@ -229,6 +232,10 @@
 	loop
 
 	clrobj
+
+	// 仮ファイルを削除
+	exist FileTemp
+	if strsize != -1:delete FileTemp
 	
 	end
 
@@ -477,7 +484,7 @@
 *Label_Delete
 
 	tempFile = File
-	File = StartDir+"/~temp.txp"
+	File = FileTemp
 
 	data1 = ""
 	data2 = ""
@@ -880,7 +887,6 @@
 		objprm objbox,boxdata
 	
 		// その他
-		File = "null"
 		pboxdata = boxdata
 		FlgUpDate = 1
 
