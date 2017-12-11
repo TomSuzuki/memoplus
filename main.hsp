@@ -522,29 +522,34 @@
 	pos 20,20:input newname,280,24,32
 	objmode 2,0:font msgothic,12
 	objsize 80,24,24
-	pos 120,64	:button goto "決定",*Label_RenameOK
-	pos 220,64	:button goto "キャンセル",*Label_RenameCancel
+	pos 120,64	:button gosub "決定",*Label_RenameOK
+	pos 220,64	:button gosub "キャンセル",*Label_RenameCancel
 	return
 
 // 名前変更（確定 newname）
 *Label_RenameOK
 	if newname = ""{
 		dialog "無効な名前です。"
-		stop
+		return
 	}
 	SetTabName TabData(pPageID),newname
 	gsel BufferRename,-1
-	gosub*Label_SetMenu
-	CheckMenuRadioItem hMenu.MenuMain_Page, MenuTab_PageBase, MenuTab_PageBase+length(TabData), pPageID, 0x0100
 
 	FlgUpDate = 1
+
+	// オブジェクトの更新
+	gsel 0
 	gosub*Label_DrawStrings
-	stop
+	gosub*Label_PageTab
+	gosub*Label_SetMenu
+	CheckMenuRadioItem hMenu.MenuMain_Page, MenuTab_PageBase, MenuTab_PageBase+length(TabData), MenuTab_PageBase+pPageID, 0x0100
+	
+	return
 
 // 名前変更（キャンセル）
 *Label_RenameCancel
 	gsel BufferRename,-1
-	stop
+	return
 
 // 非アクティブになったらウィンドウを消す
 *Label_ReDrawCommand
