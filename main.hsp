@@ -119,6 +119,7 @@
 	objmode 2,0:font FontName,FontSize,FontStyle
 	pos 0,PageTab*20:mesbox boxdata,ginfo_winx,ginfo_winy-20*Statusbar-PageTab*20,5,-1
 	objbox = stat
+	objmode 0,0
 
 	// ボタンの配置
 	objsize 20,20
@@ -821,6 +822,7 @@
 	objmode 2,0:font FontName,FontSize,FontStyle
 	pos 0,PageTab*20:mesbox boxdata,ginfo_winx,ginfo_winy-20*Statusbar-PageTab*20,5,-1
 	objbox = stat
+	objmode 0,0
 
 	return
 
