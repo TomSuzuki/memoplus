@@ -529,36 +529,42 @@
 	cls 1
 	newname = GetTabName(TabData(pPageID))
 	objmode 2,0:font msgothic,18
-	pos 20,20:input newname,280,24,32
+	pos 20,20:input newname,280,24,24
 	objmode 2,0:font msgothic,12
 	objsize 80,24,24
-	pos 120,64	:button gosub "決定",*Label_RenameOK
-	pos 220,64	:button gosub "キャンセル",*Label_RenameCancel
+	pos 120,64	:button gosub "決定",*Label_RenameButton				:ButtonIDRename_OK = stat
+	pos 220,64	:button gosub "キャンセル",*Label_RenameButton	:ButtonIDRename_Cancel = stat
 	return
 
-// 名前変更（確定 newname）
-*Label_RenameOK
-	if newname = ""{
-		dialog "無効な名前です。"
-		return
-	}
-	SetTabName TabData(pPageID),newname
-	gsel BufferRename,-1
+// 名前変更系のボタンが押された
+*Label_RenameButton
 
-	FlgUpDate = 1
+	GetCommand = stat
 
-	// オブジェクトの更新
-	gsel 0
-	gosub*Label_DrawStrings
-	gosub*Label_PageTab
-	gosub*Label_SetMenu
-	CheckMenuRadioItem hMenu.MenuMain_Page, MenuTab_PageBase, MenuTab_PageBase+length(TabData), MenuTab_PageBase+pPageID, 0x0100
+	switch GetCommand
+	case ButtonIDRename_OK			// 名前変更（確定 newname）
+		if newname = ""{
+			dialog "無効な名前です。"
+			return
+		}
+		SetTabName TabData(pPageID),newname
+		gsel BufferRename,-1
 	
-	return
+		FlgUpDate = 1
+	
+		// オブジェクトの更新
+		gsel 0
+		gosub*Label_DrawStrings
+		gosub*Label_PageTab
+		gosub*Label_SetMenu
+		CheckMenuRadioItem hMenu.MenuMain_Page, MenuTab_PageBase, MenuTab_PageBase+length(TabData), MenuTab_PageBase+pPageID, 0x0100
+	
+		swbreak
+	case ButtonIDRename_Cancel	// 名前変更（キャンセル）
+		gsel BufferRename,-1
+		swbreak
+	swend
 
-// 名前変更（キャンセル）
-*Label_RenameCancel
-	gsel BufferRename,-1
 	return
 
 // 非アクティブになったらウィンドウを消す
