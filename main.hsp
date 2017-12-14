@@ -290,7 +290,7 @@
 // 開く（Fileにファイルパスが入っている※nullで初期化）
 *Label_Open
 
-	// 読み込むデータに問題がないかチェック（ENDマーカーがあるかチェック）
+	/*// 読み込むデータに問題がないかチェック（ENDマーカーがあるかチェック）
 	notesel loaddata
 	noteload File
 	flg = 1
@@ -302,7 +302,7 @@
 		dialog "ファイルの読み込みに失敗しました。",1
 		return
 	}
-	noteunsel
+	noteunsel*/
 
 	// 初期化
 	dimtype TabData,vartype("struct")
@@ -377,7 +377,7 @@
 	objprm objbox,boxdata
 
 	// その他
-	File = "null"
+	File = getpath(File,1)+".txp"
 	pboxdata = boxdata
 
 	gosub*Label_SetMenu
@@ -401,8 +401,8 @@
 		case MenuTab_Open			//開く
 			dialog "txp",16,"メモ帳＋ファイル"
 			if stat = 1{
-				File = refstr
-				gosub*Label_Open
+				OpenFile = refstr
+				gosub*Label_LoadFileTypeSelect
 			}
 			swbreak
 		case MenuTab_NewPage	//新規ページ
@@ -765,9 +765,10 @@
 
 	notesel list
 	noteget a,0
-	gosub*Label_LoadFileTypeSelect
 	OpenFile = a
 	noteunsel
+	
+	gosub*Label_LoadFileTypeSelect
 
 	return
 
@@ -777,15 +778,19 @@
 	switch getpath(OpenFile,2+16)
 	case ".txp"
 		File = OpenFile
-		gosub*Label_Open
-		swbreak
-	case ".txt"
-		File = OpenFile
-		gosub*Label_OpenText
+		notesel tempdata
+		noteload File
+		i = notefind("END",0)
+		noteunsel
+		if i != -1{
+			gosub*Label_Open
+		}else{
+			gosub*Label_OpenText
+		}
 		swbreak
 	default
-		File = ""
-		dialog "テキストプラスファイルではありません。",,"Error"
+		File = OpenFile
+		gosub*Label_OpenText
 		swbreak
 	swend
 
