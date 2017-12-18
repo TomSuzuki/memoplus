@@ -145,7 +145,7 @@
 	// 受け取りコマンドの呼び出し設定
 	oncmd gosub *Label_WindowCommand, 0x00005
 	oncmd gosub *Label_MenuCommand, 	0x00111
-	oncmd gosub *Label_notify, $4E
+	oncmd gosub *Label_notify, 0x004E
 
 	// HSPの割り込みラベル設定
 	onexit gosub *Label_Exit
@@ -397,7 +397,7 @@
 *Label_MenuCommand
 
 	if lparam = 0{
-		n = wparam&$FFFF
+		n = wparam&0xFFFF
 		switch(n)
 		case MenuTab_Exit			//終了
 			gosub*Label_Exit
@@ -610,7 +610,7 @@
 	}
 
 	pos 0,0
-	CreateTab ginfo_winx-60, 20, TabBufferBase, $8
+	CreateTab ginfo_winx-60, 20, TabBufferBase, 0x0008
 		hTabControl = stat
 		foreach(TabData)
 			InsertTab GetTabName(TabData(cnt))
@@ -813,7 +813,7 @@
 *Label_Font
 
 	// ダイアログを開く
-	fontdlg n,$100
+	fontdlg n,0x0100
 	if stat = 0:return
 	opt = n(1)
 	if n(6) = 1:opt = opt + 4
@@ -891,7 +891,7 @@
 	GetCommand = stat
 
 	gsel BufferPageSorting
-	sendmsg objinfo(lsID,2),$18B
+	sendmsg objinfo(lsID,2),0x018B
 	ListPageNum = stat
 	gsel 0
 
@@ -906,7 +906,7 @@
 
 		dimtype ListName,vartype("str"),ListPageNum
 		repeat ListPageNum
-			sendmsg objinfo(lsID,2),$189,cnt,varptr(ListName(cnt))
+			sendmsg objinfo(lsID,2),0x0189,cnt,varptr(ListName(cnt))
 		loop
 
 		gsel 0
@@ -943,11 +943,11 @@
 			PageListData(lsNumber) = temp
 			gsel BufferPageSorting
 			sdim listbox_text
-			sendmsg objinfo(lsID,2),$188:index = stat
-			sendmsg objinfo(lsID,2),$189,index,varptr(listbox_text)
-			sendmsg objinfo(lsID,2),$182,index
-			sendmsg objinfo(lsID,2),$181,index-1,listbox_text
-			sendmsg objinfo(lsID,2),$186,index-1
+			sendmsg objinfo(lsID,2),0x0188:index = stat
+			sendmsg objinfo(lsID,2),0x0189,index,varptr(listbox_text)
+			sendmsg objinfo(lsID,2),0x0182,index
+			sendmsg objinfo(lsID,2),0x0181,index-1,listbox_text
+			sendmsg objinfo(lsID,2),0x0186,index-1
 			lsNumber = lsNumber - 1
 			gsel 0
 		}
@@ -959,20 +959,20 @@
 			PageListData(lsNumber) = temp
 			gsel BufferPageSorting
 			sdim listbox_text
-			sendmsg objinfo(lsID,2),$188:index = stat
-			sendmsg objinfo(lsID,2),$189,index,varptr(listbox_text)
-			sendmsg objinfo(lsID,2),$182,index
-			sendmsg objinfo(lsID,2),$181,index+1,listbox_text
-			sendmsg objinfo(lsID,2),$186,index+1
+			sendmsg objinfo(lsID,2),0x0188:index = stat
+			sendmsg objinfo(lsID,2),0x0189,index,varptr(listbox_text)
+			sendmsg objinfo(lsID,2),0x0182,index
+			sendmsg objinfo(lsID,2),0x0181,index+1,listbox_text
+			sendmsg objinfo(lsID,2),0x0186,index+1
 			lsNumber = lsNumber + 1
 			gsel 0
 		}
 		swbreak
 	case ButtonIDPageSorting_Delete
 		gsel BufferPageSorting
-		sendmsg objinfo(lsID,2),$188:index = stat
+		sendmsg objinfo(lsID,2),0x0188:index = stat
 		if index != -1 && ListPageNum > 1{
-			sendmsg objinfo(lsID,2),$182,index
+			sendmsg objinfo(lsID,2),0x0182,index
 			repeat ListPageNum-index-1,index;ここあってるかわからん
 				PageListData(cnt) = PageListData(cnt+1)
 			loop
@@ -986,7 +986,7 @@
 		dimtype PageListDataTemp,vartype("str"),ListPageNum
 		repeat ListPageNum
 			if cnt != 0:ListName = ListName + "\n"
-			sendmsg objinfo(lsID,2),$189,cnt,varptr(temp)
+			sendmsg objinfo(lsID,2),0x0189,cnt,varptr(temp)
 			ListName = ListName + temp
 			PageListDataTemp(cnt) = PageListData(cnt)
 		loop
@@ -1001,7 +1001,7 @@
 	case ButtonIDPageSorting_New
 		PageListData(ListPageNum) = ""
 		gsel BufferPageSorting
-		sendmsg objinfo(lsID,2),$180,,"無題のページ"
+		sendmsg objinfo(lsID,2),0x0180,,"無題のページ"
 		gsel 0
 		swbreak
 	swend
