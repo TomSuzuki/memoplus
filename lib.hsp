@@ -1,7 +1,7 @@
 //’ˆÓ
 //¦deleteobj‚Íexeì¬‚ÉÁ‚·
 
-deleteobj
+;deleteobj
 
 ;#include "d3m.hsp"	//(lib4 include‚ÍÁ‚·)
 #include "gdi32.as"

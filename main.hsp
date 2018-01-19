@@ -10,7 +10,7 @@
 #include "user32.as"
 
 // 設定
-#define VersionMes		"Version 1.26"
+#define VersionMes		"Version 1.27"
 #define CopyrightMes	"Copyright 2015-2017 BENIKAGE220"
 
 // タブのID割り振り
@@ -96,7 +96,7 @@
 	// 初期データ
 	StartDir = dir_cur	//カレントディレクトリ
 	OpenFile = dir_cmdline	//カレントファイル
-	OpenFile = "./testdata/a.txp"	;テストデータの読み込み
+	;OpenFile = "./testdata/a.txp"	;テストデータの読み込み
 	;OpenFile = "./config.csv"
 	strrep OpenFile,"\"",""	//パスの整形
 	exist OpenFile					//ファイルが存在するか？
