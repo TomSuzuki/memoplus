@@ -10,8 +10,8 @@
 #include "user32.as"
 
 // 設定
-#define VersionMes		"Version 1.27"
-#define CopyrightMes	"Copyright 2015-2017 BENIKAGE220"
+#define VersionMes		"Version 1.28 @test"
+#define CopyrightMes	"Copyright 2015-2018 tomsuzuki"
 
 // タブのID割り振り
 #enum MenuTab_NewFile = 1
@@ -260,7 +260,8 @@
 	// 更新情報をリセット
 	FlgUpDate = 0
 	pboxdata = boxdata
-	objprm objbox,boxdata
+	//objprm objbox,boxdata
+	sendmsg objinfo(objbox,2), 0xB9
 
 	// データの更新
 	SetTabData TabData(pPageID),boxdata
