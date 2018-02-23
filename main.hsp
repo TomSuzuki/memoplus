@@ -10,7 +10,7 @@
 #include "user32.as"
 
 // İ’è
-#define VersionMes		"Version 1.28 @test"
+#define VersionMes		"Version 1.28"
 #define CopyrightMes	"Copyright 2015-2018 tomsuzuki"
 
 // ƒ^ƒu‚ÌIDŠ„‚èU‚è
