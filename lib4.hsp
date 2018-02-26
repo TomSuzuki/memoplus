@@ -35,6 +35,3 @@
 	pos cx,cy
 	return string2
 #global
-
-	pos 320,240
-	mes GetMaxString("•¶š”§ŒÀ‚ÌƒeƒXƒg",88)
