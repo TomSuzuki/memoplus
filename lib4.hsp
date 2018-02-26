@@ -1,0 +1,37 @@
+#module
+#define ctype strtest(%1) ((((%1)>=129)&((%1)<=159))|(((%1)>=224)&((%1)<=252)))
+#defcfunc strlen2 var buf,int Index,int sw,local in
+	repeat 
+		temp=peek(buf,cnt)
+		if (temp=0) or ((Index<=in)*sw) {byte=cnt : break}
+		in++ :continue cnt+strtest(temp)+1
+	loop
+	if sw:return byte
+	return in
+#defcfunc strmid2 var buf,int Index,int i,local in
+	byte = strlen2(buf,Index,1)
+	repeat i
+		temp=peek(buf,byte+in)
+		if temp=0 {break}
+		in+=strtest(temp)+1
+	loop
+	return strmid(buf,byte,in)
+#global
+
+#module
+#defcfunc GetMaxString str p1,int p2
+	string = p1
+	max = p2
+	string2 = ""
+	cx = ginfo_cx
+	cy = ginfo_cy
+	repeat strlen2(string)
+		string2 = strmid2(string,0,strlen2(string)-cnt)
+		if(cnt!=0):string2 = string2 + "..."
+		pos ginfo_winx,ginfo_winy
+		mes string2
+		if(max>ginfo_mesx):break
+	loop
+	pos cx,cy
+	return string2
+#global
