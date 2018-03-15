@@ -43,6 +43,7 @@
 // 画面のID割り振り
 #enum BufferPageSorting = 1
 #enum BufferRename
+#enum BufferButton
 #enum TabBufferBase
 
 // 表示文字の設定
@@ -103,6 +104,23 @@
 	exist OpenFile					//ファイルが存在するか？
 	if strsize = -1:OpenFile = "null"	//存在しないならファイル名をnullにする
 
+	// ボタン用のデータを作成
+	buffer BufferButton,80,132
+		// ページ切り替え用[0,0 ~ 20,60]
+		color 210,210,210	:boxf 0,0,19,19
+		color 230,230,230	:boxf 2,2,17,17
+		color 255,180,180	:boxf 0,20,19,39
+		color 255,200,200	:boxf 2,22,17,37
+		color 180,180,255	:boxf 0,40,19,59
+		color 200,200,255	:boxf 2,42,17,57
+		// 並べ替え用
+		color 210,210,210	:boxf 0,60,79,83
+		color 230,230,230	:boxf 2,62,77,81
+		color 255,180,180	:boxf 0,84,79,107
+		color 255,200,200	:boxf 2,86,77,105
+		color 180,180,255	:boxf 0,108,79,131
+		color 200,200,255	:boxf 2,110,77,129
+
 	// 名前変更用ウィンドウを作成
 	screen BufferRename,320,96,2+4
 		title "名前の変更"
@@ -124,6 +142,7 @@
 
 	// ボタンの配置
 	objsize 20,20
+	objimage BufferButton,0,0,0,20,0,40
 		pos -21,-21:button gosub "+",*Label_NewPage	:IDButton_NewPage = stat
 		pos -21,-21:button gosub ">",*Label_PageNext:IDButton_PageNext = stat
 		pos -21,-21:button gosub "<",*Label_PageBack:IDButton_PageBack = stat
@@ -868,13 +887,14 @@
 
 	// ボタンの配置
 	objsize 80,24,24
-	pos 220,440	:button gosub "キャンセル",*PageSortingButton			:ButtonIDPageSorting_Cancel = stat
-	pos 120,440	:button gosub "決定",*PageSortingButton						:ButtonIDPageSorting_OK = stat
-	pos 20,260	:button gosub "一つ上へ",*PageSortingButton				:ButtonIDPageSorting_Up = stat
-	pos 120,260	:button gosub "一つ下へ",*PageSortingButton				:ButtonIDPageSorting_Down = stat
-	pos 220,260	:button gosub "削除",*PageSortingButton						:ButtonIDPageSorting_Delete = stat
-	pos 20,310	:button gosub "名前で並び替え",*PageSortingButton	:ButtonIDPageSorting_Sort = stat
-	pos 20,360	:button gosub "新しいページ",*PageSortingButton		:ButtonIDPageSorting_New = stat
+	objimage BufferButton,0,60,0,84,0,108
+		pos 220,440	:button gosub "キャンセル",*PageSortingButton			:ButtonIDPageSorting_Cancel = stat
+		pos 120,440	:button gosub "決定",*PageSortingButton						:ButtonIDPageSorting_OK = stat
+		pos 20,260	:button gosub "一つ上へ",*PageSortingButton				:ButtonIDPageSorting_Up = stat
+		pos 120,260	:button gosub "一つ下へ",*PageSortingButton				:ButtonIDPageSorting_Down = stat
+		pos 220,260	:button gosub "削除",*PageSortingButton						:ButtonIDPageSorting_Delete = stat
+		pos 20,310	:button gosub "名前で並び替え",*PageSortingButton	:ButtonIDPageSorting_Sort = stat
+		pos 20,360	:button gosub "新しいページ",*PageSortingButton		:ButtonIDPageSorting_New = stat
 
 	// ボタンに対する文字
 	font msgothic,10
