@@ -146,6 +146,7 @@
 		pos -21,-21:button gosub "+",*Label_NewPage	:IDButton_NewPage = stat
 		pos -21,-21:button gosub ">",*Label_PageNext:IDButton_PageNext = stat
 		pos -21,-21:button gosub "<",*Label_PageBack:IDButton_PageBack = stat
+		pos -21,-21:button gosub "×",*Label_Delete:IDButton_DelPage = stat
 
 	// データの初期化
 	pPageID = -1
@@ -180,7 +181,9 @@
 	if(Statusbar){
 		UpdateMesg = "[更新]"
 		if FlgUpDate = 0:UpdateMesg = ""
-		
+
+		dName = getpath(File,8)
+		if(dName == "null"):dName == "無題"
 		color 240,240,240:boxf 0,ginfo_winy-20,ginfo_winx,ginfo_winy
 		color 0:font msgothic,15
 		pos 5,ginfo_winy-17:mes dName+" / "+dPage
@@ -533,7 +536,6 @@
 	notesel data
 	notesave File
 	noteunsel
-
 	
 	gosub*Label_Open
 	
@@ -627,11 +629,12 @@
 		resizeobj IDButton_NewPage,size
 		resizeobj IDButton_PageNext,size
 		resizeobj IDButton_PageBack,size
+		resizeobj IDButton_DelPage,size
 		return
 	}
 
 	pos 0,0
-	CreateTab ginfo_winx-60, 20, TabBufferBase, 0x0008
+	CreateTab ginfo_winx-80, 20, TabBufferBase, 0x0008
 		hTabControl = stat
 		foreach(TabData)
 			InsertTab GetTabName(TabData(cnt))
@@ -640,9 +643,10 @@
 	gsel TabBufferBase,1
 	gsel 0
 
-	size = 20,20,ginfo_winx-20,0:	resizeobj IDButton_NewPage,size
+	size = 20,20,ginfo_winx-80,0:	resizeobj IDButton_NewPage,size
 	size = 20,20,ginfo_winx-40,0:	resizeobj IDButton_PageNext,size
 	size = 20,20,ginfo_winx-60,0:	resizeobj IDButton_PageBack,size
+	size = 20,20,ginfo_winx-20,0:	resizeobj IDButton_DelPage,size
 
 	ChangeTab2 pPageID
 
