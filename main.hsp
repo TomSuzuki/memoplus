@@ -11,7 +11,7 @@
 #include "user32.as"
 
 // 設定
-#define VersionMes		"Version 1.31"
+#define VersionMes		"Version 1.32"
 #define CopyrightMes	"Copyright 2015-2018 tomsuzuki"
 
 // タブのID割り振り
@@ -105,7 +105,7 @@
 	if strsize = -1:OpenFile = "null"	//存在しないならファイル名をnullにする
 
 	// ボタン用のデータを作成
-	buffer BufferButton,80,132
+	buffer BufferButton,80,512
 		// ページ切り替え用[0,0 ~ 20,60]
 		color 210,210,210	:boxf 0,0,19,19
 		color 230,230,230	:boxf 2,2,17,17
@@ -120,6 +120,13 @@
 		color 255,200,200	:boxf 2,86,77,105
 		color 180,180,255	:boxf 0,108,79,131
 		color 200,200,255	:boxf 2,110,77,129
+		// ページ名の変更（80*24）
+		color 210,210,210	:boxf 0,220,79,243
+		color 230,230,230	:boxf 2,222,77,241
+		color 255,180,180	:boxf 0,244,79,267
+		color 255,200,200	:boxf 2,246,77,265
+		color 180,180,255	:boxf 0,266,79,289
+		color 200,200,255	:boxf 2,268,77,287
 
 	// 名前変更用ウィンドウを作成
 	screen BufferRename,320,96,2+4
@@ -554,6 +561,7 @@
 	objmode 2,0:font msgothic,18
 	pos 20,20:input newname,280,24,24
 	objmode 2,0:font msgothic,12
+	objimage BufferButton,0,220,0,244,0,266
 	objsize 80,24,24
 	pos 120,64	:button gosub "決定",*Label_RenameButton				:ButtonIDRename_OK = stat
 	pos 220,64	:button gosub "キャンセル",*Label_RenameButton	:ButtonIDRename_Cancel = stat
