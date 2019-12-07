@@ -4,15 +4,16 @@
 
 // ライブラリのインクルード
 #include "lib.hsp"
-#include "lib2.hsp"
-#include "lib3.hsp"
-#include "lib4.hsp"
+#include "api.hsp"
+#include "config.hsp"
+#include "strings.hsp"
+
 #include "obj.as"
 #include "user32.as"
 
 // 設定
-#define VersionMes		"Version 1.32"
-#define CopyrightMes	"Copyright 2015-2018 tomsuzuki"
+#define VersionMes		"Version 1.40"
+#define CopyrightMes	"Copyright 2015-2019 TomDuzuki"
 
 // タブのID割り振り
 #enum MenuTab_NewFile = 1
@@ -30,7 +31,7 @@
 #enum MenuTab_Statusbar
 #enum MenuTab_PageTab
 #enum MenuTab_PageSorting
-#enum MenuTab_PageBase = 1024
+#enum MenuTab_PageBase	// Baseはタブの最後
 
 // メニューのID割り振り
 #enum MenuMain_File = 1
@@ -96,37 +97,35 @@
 	sdim boxdata,0xFFFFFF
 
 	// 初期データ
-	StartDir = dir_cur	//カレントディレクトリ
-	OpenFile = dir_cmdline	//カレントファイル
-	;OpenFile = "./testdata/a.txp"	;テストデータの読み込み
-	;OpenFile = "./config.csv"
-	strrep OpenFile,"\"",""	//パスの整形
-	exist OpenFile					//ファイルが存在するか？
-	if strsize = -1:OpenFile = "null"	//存在しないならファイル名をnullにする
+	StartDir = dir_cur		// カレントディレクトリ
+	OpenFile = dir_cmdline	// 開くファイル
+	strrep OpenFile,"\"",""	// パスの整形
+	exist OpenFile						// ファイルが存在するか？
+	if strsize = -1:OpenFile = "null"	// 存在しないならファイル名をnullにする
 
 	// ボタン用のデータを作成
 	buffer BufferButton,80,512
 		// ページ切り替え用[0,0 ~ 20,60]
 		color 210,210,210	:boxf 0,0,19,19
 		color 230,230,230	:boxf 2,2,17,17
-		color 255,180,180	:boxf 0,20,19,39
-		color 255,200,200	:boxf 2,22,17,37
-		color 180,180,255	:boxf 0,40,19,59
-		color 200,200,255	:boxf 2,42,17,57
+		color 180,180,180	:boxf 0,20,19,39
+		color 255,255,255	:boxf 2,22,17,37
+		color 180,180,180	:boxf 0,40,19,59
+		color 200,200,200	:boxf 2,42,17,57
 		// 並べ替え用
 		color 210,210,210	:boxf 0,60,79,83
 		color 230,230,230	:boxf 2,62,77,81
-		color 255,180,180	:boxf 0,84,79,107
-		color 255,200,200	:boxf 2,86,77,105
+		color 180,180,180	:boxf 0,84,79,107
+		color 255,255,255	:boxf 2,86,77,105
 		color 180,180,255	:boxf 0,108,79,131
-		color 200,200,255	:boxf 2,110,77,129
+		color 200,200,200	:boxf 2,110,77,129
 		// ページ名の変更（80*24）
 		color 210,210,210	:boxf 0,220,79,243
 		color 230,230,230	:boxf 2,222,77,241
-		color 255,180,180	:boxf 0,244,79,267
-		color 255,200,200	:boxf 2,246,77,265
-		color 180,180,255	:boxf 0,266,79,289
-		color 200,200,255	:boxf 2,268,77,287
+		color 180,180,180	:boxf 0,244,79,267
+		color 255,255,255	:boxf 2,246,77,265
+		color 180,180,180	:boxf 0,266,79,289
+		color 200,200,200	:boxf 2,268,77,287
 
 	// 名前変更用ウィンドウを作成
 	screen BufferRename,320,96,2+4
@@ -165,14 +164,14 @@
 	DandD_SetSubLabel *Label_GetDDFile
 
 	// 初期配置
-	gosub*Label_LoadFileTypeSelect
-	gosub*Label_SetMenu
-	gosub*Label_SetMesbox
-	gosub*Label_PageTab
+	gosub *Label_LoadFileTypeSelect
+	gosub *Label_SetMenu
+	gosub *Label_SetMesbox
+	gosub *Label_PageTab
 
 	// 受け取りコマンドの呼び出し設定
 	oncmd gosub *Label_WindowCommand, 0x00005
-	oncmd gosub *Label_MenuCommand, 	0x00111
+	oncmd gosub *Label_MenuCommand, 0x00111
 	oncmd gosub *Label_notify, 0x004E
 
 	// HSPの割り込みラベル設定
@@ -188,7 +187,6 @@
 	if(Statusbar){
 		UpdateMesg = "[更新]"
 		if FlgUpDate = 0:UpdateMesg = ""
-
 		dName = getpath(File,8)
 		if(dName == "null"):dName == "無題"
 		color 240,240,240:boxf 0,ginfo_winy-20,ginfo_winx,ginfo_winy
@@ -197,9 +195,6 @@
 		x = limit(ginfo_winx-240,ginfo_mesx+64,ginfo_winx)
 		color 210,210,210:line x-24,ginfo_winy-20,x-24,ginfo_winy:color 0
 		pos x,ginfo_winy-17:mes GetMaxString(strf("%dページ　%s",1+pPageID,UpdateMesg),ginfo_winx-x)
-
-		// 更新があったら文字を表示
-		;if FlgUpDate = 1:pos ginfo_winx-5,ginfo_winy-3:edmes "[更新]"
 	}
 
 	return
@@ -210,7 +205,7 @@
 	if FlgUpDate = 0{
 		gsel 0
 		sendmsg objinfo(objbox,2), 0xB8	:FlgUpDate = stat
-		if(FlgUpDate):gosub*Label_DrawStrings
+		if(FlgUpDate):gosub *Label_DrawStrings
 	}
 
 	getkey Ctrl,17
@@ -228,8 +223,15 @@
 			}
 			swbreak
 		case 78	//n
+			File = "null"
+			gosub *Label_Open
 			swbreak
 		case 79	//o
+			dialog "txp",16,"メモ帳＋ファイル"
+			if stat = 1{
+				OpenFile = refstr
+				gosub *Label_LoadFileTypeSelect
+			}
 			swbreak
 		swend
 	}
@@ -290,7 +292,6 @@
 	// 更新情報をリセット
 	FlgUpDate = 0
 	pboxdata = boxdata
-	//objprm objbox,boxdata
 	sendmsg objinfo(objbox,2), 0xB9
 
 	// データの更新
@@ -314,26 +315,12 @@
 	noteunsel
 
 	// 更新などの文字を初期化
-	gosub*Label_DrawStrings
+	gosub *Label_DrawStrings
 
 	return
 
 // 開く（Fileにファイルパスが入っている※nullで初期化）
 *Label_Open
-
-	/*// 読み込むデータに問題がないかチェック（ENDマーカーがあるかチェック）
-	notesel loaddata
-	noteload File
-	flg = 1
-	repeat noteinfo(0)
-		noteget data,cnt
-		if data = "END":flg = 0:break
-	loop
-	if(flg){
-		dialog "ファイルの読み込みに失敗しました。",1
-		return
-	}
-	noteunsel*/
 
 	// 初期化
 	dimtype TabData,vartype("struct")
@@ -379,9 +366,9 @@
 
 	pboxdata = boxdata
 
-	gosub*Label_SetMenu
-	gosub*Label_SetMesbox
-	gosub*Label_PageTab
+	gosub *Label_SetMenu
+	gosub *Label_SetMesbox
+	gosub *Label_PageTab
 	
 	return
 
@@ -408,7 +395,6 @@
 		NoteData(0) = loaddata
 		newmod TabData,ModuleTabData,NoteName(0),NoteData(0)
 		noteunsel
-	
 		boxdata = GetTabData(TabData(0))
 		objprm objbox,boxdata
 	
@@ -418,9 +404,9 @@
 	// その他
 	pboxdata = boxdata
 
-	gosub*Label_SetMenu
-	gosub*Label_SetMesbox
-	gosub*Label_PageTab
+	gosub *Label_SetMenu
+	gosub *Label_SetMesbox
+	gosub *Label_PageTab
 
 	return
 
@@ -431,7 +417,7 @@
 		n = wparam&0xFFFF
 		switch(n)
 		case MenuTab_Exit			//終了
-			gosub*Label_Exit
+			gosub *Label_Exit
 			swbreak
 		case MenuTab_Version	//バージョン情報
 			dialog "メモ帳＋  "+VersionMes+"\n"+CopyrightMes,," version"
@@ -440,41 +426,41 @@
 			dialog "txp",16,"メモ帳＋ファイル"
 			if stat = 1{
 				OpenFile = refstr
-				gosub*Label_LoadFileTypeSelect
+				gosub *Label_LoadFileTypeSelect
 			}
 			swbreak
 		case MenuTab_NewPage	//新規ページ
-			gosub*Label_CreateNewPage
+			gosub *Label_CreateNewPage
 			swbreak
-		case MenuTab_NewFile	//新規ファイル
+		case MenuTab_NewFile	//新規作成
 			File = "null"
-			gosub*Label_Open
+			gosub *Label_Open
 			swbreak
 		case MenuTab_NameSave	//名前を付けて保存
-			gosub*Label_NameSave
+			gosub *Label_NameSave
 			swbreak
 		case MenuTab_Rename		//名前変更
-			gosub*Label_Rename
+			gosub *Label_Rename
 			swbreak
 		case MenuTab_MakeTxt	//テキストとして保存
-			gosub*Label_MakeTxt
+			gosub *Label_MakeTxt
 			swbreak
 		case MenuTab_Save			//上書き保存
 			if File = "null"{
-				gosub*Label_NameSave
+				gosub *Label_NameSave
 			}else{
-				gosub*Label_Save
+				gosub *Label_Save
 			}
 			swbreak
 		case MenuTab_PageSorting	//ページの並べ替え
-			gosub*PageSorting
+			gosub *PageSorting
 			swbreak
 		case MenuTab_DelPage	//削除
-			gosub*Label_Delete
-			gosub*Label_SetMenu
+			gosub *Label_Delete
+			gosub *Label_SetMenu
 			swbreak
 		case MenuTab_Font			//フォント変更
-			gosub*Label_Font
+			gosub *Label_Font
 			swbreak
 		case MenuTab_Statusbar//ステータスバー
 			Statusbar = (Statusbar == 0)
@@ -485,7 +471,7 @@
 			SaveConfig "config.csv"
 
 			CheckMenuItem hMenu.MeneMain_View, MenuTab_Statusbar,Statusbar*8
-			gosub*Label_SetMesbox
+			gosub *Label_SetMesbox
 			swbreak
 		case MenuTab_PageTab	//ページタブ
 			PageTab = (PageTab == 0)
@@ -496,12 +482,12 @@
 			SaveConfig "config.csv"
 
 			CheckMenuItem hMenu.MeneMain_View, MenuTab_PageTab,PageTab*8
-			gosub*Label_SetMesbox
-			gosub*Label_PageTab
+			gosub *Label_SetMesbox
+			gosub *Label_PageTab
 			swbreak
 		default								//タブ変更
 			NextTab = n-MenuTab_PageBase
-			gosub*Label_ChangePage
+			gosub *Label_ChangePage
 			swbreak
 		swend
 	}
@@ -517,7 +503,7 @@
 		CheckMenuRadioItem hMenu.MenuMain_Page, MenuTab_PageBase, MenuTab_PageBase+length(TabData), NextTab+MenuTab_PageBase, 0x0100
 		pPageID = NextTab
 		ChangeTab2 NextTab
-		gosub*Label_SetMesbox
+		gosub *Label_SetMesbox
 	}
 	return
 
@@ -544,12 +530,12 @@
 	notesave File
 	noteunsel
 	
-	gosub*Label_Open
+	gosub *Label_Open
 	
 	File = tempFile
 	FlgUpDate = 1
 
-	gosub*Label_DrawStrings
+	gosub *Label_DrawStrings
 	
 	return
 
@@ -580,14 +566,14 @@
 		}
 		SetTabName TabData(pPageID),newname
 		gsel BufferRename,-1
-	
+
 		FlgUpDate = 1
 	
 		// オブジェクトの更新
 		gsel 0
-		gosub*Label_DrawStrings
-		gosub*Label_PageTab
-		gosub*Label_SetMenu
+		gosub *Label_DrawStrings
+		gosub *Label_PageTab
+		gosub *Label_SetMenu
 		CheckMenuRadioItem hMenu.MenuMain_Page, MenuTab_PageBase, MenuTab_PageBase+length(TabData), MenuTab_PageBase+pPageID, 0x0100
 	
 		swbreak
@@ -606,8 +592,8 @@
 // 画面サイズ変更受けとり
 *Label_WindowCommand
 
-	gosub*Label_SetMesbox
-	gosub*Label_PageTab
+	gosub *Label_SetMesbox
+	gosub *Label_PageTab
 	
 	return
 
@@ -621,7 +607,7 @@
 	size = ginfo_winx,ginfo_winy-20*Statusbar-PageTab*20,0,PageTab*20
 	resizeobj objbox,size,0
 
-	gosub*Label_DrawStrings
+	gosub *Label_DrawStrings
 
 	pboxdata = boxdata
 	
@@ -665,7 +651,7 @@
 	if nmhdr.0 = hTabControl & nmhdr.2 = -551 {
 		ChangeTab
 		NextTab = stat
-		gosub*Label_ChangePage
+		gosub *Label_ChangePage
 		gsel 0
 	}
 	return
@@ -679,15 +665,15 @@
 
 	FlgUpDate = 1
 
-	gosub*Label_SetMenu
-	gosub*Label_PageTab
-	gosub*Label_ChangePage
+	gosub *Label_SetMenu
+	gosub *Label_PageTab
+	gosub *Label_ChangePage
 	
 	return
 
 // 新規ページ
 *Label_NewPage
-	gosub*Label_CreateNewPage
+	gosub *Label_CreateNewPage
 	return
 
 // ページを一つ進める
@@ -702,7 +688,7 @@
 *Label_PageBack
 	NextTab = pPageID - 1
 	if NextTab < 0:return
-	gosub*Label_ChangePage
+	gosub *Label_ChangePage
 	return
 
 // メニューバー
