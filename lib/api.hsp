@@ -1,21 +1,21 @@
-#ifndef DragAndDropModuleIncluded
-#define DragAndDropModuleIncluded
+
+// Copyright(C) 2011 衣日和 All rights reserved. ( http://www.tvg.ne.jp/menyukko/ )
 #module DragAndDropModule
-#uselib "shell32.dll"   ;   ★ドラッグ＆ドロップをするAPI
+#uselib "shell32.dll"
 #func DragAcceptFiles   "DragAcceptFiles"   int, int
 #func DragQueryFile     "DragQueryFileA"    int, int, var, int
 #func DragQueryPoint    "DragQueryPoint"    int, var
 #func DragFinish        "DragFinish"        int
-#define WM_DROPFILES    $0233   ;   DragAndDrop
+#define WM_DROPFILES    $0233
 
 #define global DandD_SetSubLabel(%1=0) DadmLabel@DragAndDropModule=%1
 
-#deffunc DandD_SetWindow int f
-    if f {
+#deffunc DandD_SetWindow int flg
+    if(flg){
         oncmd gosub *DadmGetMessageL, WM_DROPFILES
-        DragAcceptFiles hwnd, 1 ;   On
+        DragAcceptFiles hwnd, 1
     } else {
-        DragAcceptFiles hwnd, 0 ;   Off
+        DragAcceptFiles hwnd, 0
     }
     return
 
@@ -24,57 +24,52 @@
     return
 
 #defcfunc DandD_GetPath int i
-    notesel DadmList  : noteget sb, i  : noteunsel
+    notesel DadmList
+    noteget sb, i
+    noteunsel
     return sb
 
 #defcfunc DandD_GetInfo int f
     return DadmInfo(f)
 
-*DadmGetMessageL    ;   メッセージ到着
-    hDrop = wParam  ;   内部ハンドル
-    DadmInfo(3) = ginfo_intid   ;           対象のウィンドウID
-    DragQueryPoint hDrop, DadmInfo(1)   ;   座標
-    DragQueryFile hDrop, -1, DadmInfo, 0    ;   変数はダミー
-    DadmInfo = stat ;                       ファイル数
+*DadmGetMessageL
+    hDrop = wParam
+    DadmInfo(3) = ginfo_intid
+    DragQueryPoint hDrop, DadmInfo(1)
+    DragQueryFile hDrop, -1, DadmInfo, 0
+    DadmInfo = stat
     DadmList = ""
     repeat DadmInfo
-        DragQueryFile hDrop, cnt, sb, 0 ;   文字数は？
+        DragQueryFile hDrop, cnt, sb, 0
         if sbleng <= stat  : sbleng = stat + 1  : sdim sb, sbleng
-        DragQueryFile hDrop, cnt, sb, sbleng    ;   取得
+        DragQueryFile hDrop, cnt, sb, sbleng
         DadmList += sb + "\n"
     loop
-    DragFinish hDrop    ;   内部ハンドル解放
-    if vartype(DadmLabel) == 1  : gosub DadmLabel   ;   サブルーチン
-    return 0    ;   メッセージ処理完了
-; http://www.tvg.ne.jp/menyukko/
-; Copyright(C) 2011 衣日和 All rights reserved.
+    DragFinish hDrop
+    if vartype(DadmLabel) == 1  : gosub DadmLabel
+    return 0
 #global
-#endif
 
 
 #module
-	;▼必要となるAPIや定数の定義
 #uselib "gdi32.dll"
 #func  GetObject "GetObjectA" int,int,var
 
 #uselib "comdlg32.dll"
 #func  ChooseFont "ChooseFontA" var
 
-	; ・引数  Value   (array)      : 数値型配列変数
-	;         nOption (int) ($100) : 0～(0) オプション値
-
 #deffunc fontdlg array prm1,int prm2
 	mref bmscr,67
 	mref ref,65
 	nOption = prm2 : if nOption<=0 : nOption=0
 
-	dim lpObject,64   ;LOGFONT構造体
-	dim chf,15        ;CHOOSEFONT構造体
-	dim retval,8      ;取得値退避用
+	dim lpObject,64
+	dim chf,15
+	dim retval,8
 
 	GetObject bmscr(38),60,lpObject
 
-	;CHOOSEFONT構造体
+	// CHOOSEFONT構造体
 	chf(0)  = 60
 	chf(1)  = hwnd
 	chf(3)  = varptr(lpObject)
@@ -100,24 +95,18 @@
 		retval(6) = peek(lpObject,21)
 		retval(7) = peek(lpObject,22)
 	}
-	repeat 8 : prm1(cnt)=retval(cnt) : loop
-	;  prm1の数値型配列変数に返される値
-	;   (0)   : font size (HSPで利用する論理サイズ)
-	;   (1)   : font書体
-	;              -  0 = NORMAL
-	;              -  1 = BOLD
-	;              -  2 = ITALIC
-	;              -  3 = BOLD|ITALIC
-	;   (2)   : font size (pt)
-	;   (3),(4),(5) : color r,g,b
-	;   (6)   : 下線
-	;   (7)   : 打消し線
-	dim lpObject,0  : dim chf,0 : dim retval,0
+	
+	repeat 8
+		prm1(cnt)=retval(cnt)
+	loop
+	
+	dim lpObject,0
+	dim chf,0
+	dim retval,0
 	return ret
 #global
 
-;	超低機能なタブコントロール作成モジュール (by Kpan)
-
+// 超低機能なタブコントロール作成モジュール (by Kpan)
 #module
 
 #uselib "user32"
@@ -128,12 +117,6 @@
 #uselib "gdi32"
 #cfunc GetStockObject "GetStockObject" int
 
-;	CreateTab p1, p2, p3, p4
-;	タブコントロールを設置します。statにタブコントロールのハンドルが
-;	返ります。
-;	p1～p2=タブコントロールのX/Y方向のサイズ
-;	p3(1)=タブの項目として貼り付けるbgscr命令の初回ウィンドウID値
-;	p4=タブコントロールの追加ウィンドウスタイル
 #deffunc CreateTab int p1, int p2, int p3, int p4
 	flg = 1
 	winobj "systabcontrol32", "", , $52000000 | p4, p1, p2
@@ -148,8 +131,6 @@
 
 	return hTab
 
-;	InsertTab "タブつまみ部分の文字列"
-;	タブコントロールに項目を追加します。
 #deffunc InsertTab str p2
 	pszText = p2 : tcitem = 1, 0, 0, varptr(pszText)
 	sendmsg hTab, $1307, TabItem, varptr(tcitem)
@@ -157,14 +138,13 @@
 	GetClientRect hTab, varptr(rect)
 	sendmsg hTab, $1328, , varptr(rect)
 
-bgscr TabID + TabItem, rect.2 - rect.0, rect.3 - rect.1, 2, rect.0, rect.1
+	bgscr TabID + TabItem, rect.2 - rect.0, rect.3 - rect.1, 2, rect.0, rect.1
 	SetWindowLong hwnd, -16, $40000000
 	SetParent hwnd, hTab
 
 	TabItem++
 	return
 
-;	タブ切り替え処理用
 #deffunc ChangeTab
 	if(1!=flg):return
 	gsel wID + TabID, -1
@@ -189,7 +169,6 @@ bgscr TabID + TabItem, rect.2 - rect.0, rect.3 - rect.1, 2, rect.0, rect.1
 
 	return wID	
 
-;消す
 #deffunc DeleteTab
 
 	if(flg):clrobj idTab,idTab

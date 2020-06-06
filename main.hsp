@@ -1,19 +1,19 @@
 // コンパイルの設定
-#packopt icon "./icon.ico"
-#packopt version "バージョン.txt"
+#packopt icon "./etc/icon.ico"
+#packopt version "./etc/version.txt"
 
 // ライブラリのインクルード
-#include "lib.hsp"
-#include "api.hsp"
-#include "config.hsp"
-#include "strings.hsp"
+#include "./lib/api.hsp"
+#include "./lib/config.hsp"
+#include "./lib/strings.hsp"
+#include "./lib/function.hsp"
 
 #include "obj.as"
 #include "user32.as"
 
 // 設定
 #define VersionMes		"Version 1.40"
-#define CopyrightMes	"Copyright 2015-2019 TomDuzuki"
+#define CopyrightMes	"Copyright 2015-2020 TomSuzuki"
 
 // タブのID割り振り
 #enum MenuTab_NewFile = 1
@@ -54,6 +54,25 @@
 // 仮ファイル名
 #define FileTemp	StartDir+"/~temp.txp"
 
+// WIN API+
+#define global WM_SIZE		0x0005
+#define global WM_NOTIFY	0x004E
+#define global WM_KEYDOWN	0x0100
+#define global WM_COMMAND	0x0111
+#define global EM_SETSEL	0x00B1
+#define global EM_GETMODIFY	0x00B8
+#define global EM_SETMODIFY	0x00B9
+#define global TCS_FLATBUTTONS	0x0008
+#define global TCS_RAGGEDRIGHT	0x0800
+#define global TCS_FORCEICONLEFT	0x0010
+#define global LB_ADDSTRING	0x0180
+#define global LB_INSERTSTRING	0x0181
+#define global LB_DELETESTRING	0x0182
+#define global LB_SETCURSEL	0x0186
+#define global LB_GETCURSEL	0x0188
+#define global LB_GETTEXT	0x0189
+#define global LB_GETCOUNT	0x018B
+
 // テキストデータを保存するモジュール
 #module ModuleTabData name,data
 #modinit str p1,str p2
@@ -72,8 +91,9 @@
 	return
 #global
 
+// 関数など
 #module
-#defcfunc CountPageNum
+#defcfunc CountPageNum	// ページ数をカウントする
 	ct = 0
 	foreach TabData@
 		ct++
@@ -84,14 +104,14 @@
 // ここから本体 -----------------------------------------------------------------------------------
 	// コンフィグのロード
 	notesel notedata
-	enoteload "config.csv"
+	enoteload "./etc/config.csv"
 	SetConfigData notedata
 		FontName = LoadConfig("FontName","ＭＳ ゴシック")
 		FontSize = int(LoadConfig("FontSize","15"))
 		FontStyle = int(LoadConfig("FontStyle","0"))
 		Statusbar = int(LoadConfig("Statusbar","0"))
 		PageTab = int(LoadConfig("PageTab","0"))
-	SaveConfig "config.csv"
+	SaveConfig "./etc/config.csv"
 
 	// 初期化
 	sdim boxdata,0xFFFFFF
@@ -156,7 +176,7 @@
 
 	// データの初期化
 	pPageID = -1
-	FlgUpDate = 0
+	isUpdate = 0
 	dimtype TabData,vartype("struct")
 
 	// ドラッグ＆ドロップの呼び出し設定
@@ -170,9 +190,9 @@
 	gosub *Label_PageTab
 
 	// 受け取りコマンドの呼び出し設定
-	oncmd gosub *Label_WindowCommand, 0x00005
-	oncmd gosub *Label_MenuCommand, 0x00111
-	oncmd gosub *Label_notify, 0x004E
+	oncmd gosub *Label_WindowCommand, WM_SIZE
+	oncmd gosub *Label_MenuCommand, WM_COMMAND
+	oncmd gosub *Label_notify, WM_NOTIFY
 
 	// HSPの割り込みラベル設定
 	onexit gosub *Label_Exit
@@ -186,7 +206,7 @@
 	// ステータスバー
 	if(Statusbar){
 		UpdateMesg = "[更新]"
-		if FlgUpDate = 0:UpdateMesg = ""
+		if isUpdate = 0:UpdateMesg = ""
 		dName = getpath(File,8)
 		if(dName == "null"):dName == "無題"
 		color 240,240,240:boxf 0,ginfo_winy-20,ginfo_winx,ginfo_winy
@@ -202,10 +222,11 @@
 // キー
 *Label_Key
 
-	if FlgUpDate = 0{
+	if isUpdate = 0{
 		gsel 0
-		sendmsg objinfo(objbox,2), 0xB8	:FlgUpDate = stat
-		if(FlgUpDate):gosub *Label_DrawStrings
+		sendmsg objinfo(objbox,2), EM_GETMODIFY
+		isUpdate = stat
+		if(isUpdate):gosub *Label_DrawStrings
 	}
 
 	getkey Ctrl,17
@@ -213,7 +234,7 @@
 	if Ctrl = 1{
 		switch iparam
 		case 65	//a
-			sendmsg objinfo(objbox,2),0xB1,0,-1
+			sendmsg objinfo(objbox,2), EM_SETSEL ,0,-1
 			swbreak
 		case 83	//s
 			if File = "null"{
@@ -248,13 +269,13 @@
 		return
 	}
 
-	if FlgUpDate = 0{
+	if isUpdate = 0{
 		gsel 0
-		sendmsg objinfo(objbox,2), 0xB8
-		FlgUpDate = stat
+		sendmsg objinfo(objbox,2), EM_GETMODIFY
+		isUpdate = stat
 	}
 
-	if FlgUpDate = 1{
+	if isUpdate = 1{
 		dialog "ファイルは更新されています。\n閉じますか？",2
 		if stat = 7:return
 	}
@@ -290,9 +311,9 @@
 *Label_Save
 
 	// 更新情報をリセット
-	FlgUpDate = 0
+	isUpdate = 0
 	pboxdata = boxdata
-	sendmsg objinfo(objbox,2), 0xB9
+	sendmsg objinfo(objbox,2), EM_SETMODIFY
 
 	// データの更新
 	SetTabData TabData(pPageID),boxdata
@@ -500,7 +521,7 @@
 		SetTabData TabData(pPageID),boxdata
 		boxdata = GetTabData(TabData(NextTab))
 		objprm objbox,boxdata
-		CheckMenuRadioItem hMenu.MenuMain_Page, MenuTab_PageBase, MenuTab_PageBase+length(TabData), NextTab+MenuTab_PageBase, 0x0100
+		CheckMenuRadioItem hMenu.MenuMain_Page, MenuTab_PageBase, MenuTab_PageBase+length(TabData), NextTab+MenuTab_PageBase, WM_KEYDOWN
 		pPageID = NextTab
 		ChangeTab2 NextTab
 		gosub *Label_SetMesbox
@@ -533,7 +554,7 @@
 	gosub *Label_Open
 	
 	File = tempFile
-	FlgUpDate = 1
+	isUpdate = 1
 
 	gosub *Label_DrawStrings
 	
@@ -567,14 +588,14 @@
 		SetTabName TabData(pPageID),newname
 		gsel BufferRename,-1
 
-		FlgUpDate = 1
+		isUpdate = 1
 	
 		// オブジェクトの更新
 		gsel 0
 		gosub *Label_DrawStrings
 		gosub *Label_PageTab
 		gosub *Label_SetMenu
-		CheckMenuRadioItem hMenu.MenuMain_Page, MenuTab_PageBase, MenuTab_PageBase+length(TabData), MenuTab_PageBase+pPageID, 0x0100
+		CheckMenuRadioItem hMenu.MenuMain_Page, MenuTab_PageBase, MenuTab_PageBase+length(TabData), MenuTab_PageBase+pPageID, WM_KEYDOWN
 	
 		swbreak
 	case ButtonIDRename_Cancel	// 名前変更（キャンセル）
@@ -628,7 +649,7 @@
 	}
 
 	pos 0,0
-	CreateTab ginfo_winx-80, 20, TabBufferBase, 0x0008
+	CreateTab ginfo_winx-80, 20, TabBufferBase, TCS_FLATBUTTONS
 		hTabControl = stat
 		foreach(TabData)
 			InsertTab GetTabName(TabData(cnt))
@@ -660,10 +681,9 @@
 *Label_CreateNewPage
 	newmod TabData,ModuleTabData,"無題のページ",""
 
-	ct = 0:foreach TabData:ct++:loop
-	NextTab = ct-1
+	NextTab = CountPageNum()-1
 
-	FlgUpDate = 1
+	isUpdate = 1
 
 	gosub *Label_SetMenu
 	gosub *Label_PageTab
@@ -679,8 +699,7 @@
 // ページを一つ進める
 *Label_PageNext
 	NextTab = pPageID + 1
-	ct = 0:foreach TabData:ct++:loop
-	if ct <= NextTab:return
+	if CountPageNum() <= NextTab:return
 	gosub*Label_ChangePage
 	return
 
@@ -709,16 +728,16 @@
 		AppendMenu hMenu.MenuMain_File, 0, MenuTab_NameSave, 	"名前を付けて保存(&S)"
 		AppendMenu hMenu.MenuMain_File, 0, MenuTab_Save, 			"上書き保存(&A)\tCtrl+S"
 		AppendMenu hMenu.MenuMain_File, 0, MenuTab_MakeTxt,		"テキストファイルとして出力"
-		AppendMenu hMenu.MenuMain_File, 0x0800, 0, ""
+		AppendMenu hMenu.MenuMain_File, TCS_RAGGEDRIGHT, 0, ""
 		AppendMenu hMenu.MenuMain_File, 0, MenuTab_Exit, 			"終了(&Q)"
 
 	CreatePopupMenu
 	hMenu.MenuMain_Edit = stat		// 編集
 		AppendMenu hMenu.MenuMain_Edit, 0, MenuTab_NewPage, 		"新しいページを追加(&N)"
 		AppendMenu hMenu.MenuMain_Edit, 0, MenuTab_Rename, 			"このページのタイトルを変更"
-		AppendMenu hMenu.MenuMain_Edit, 0x0800, 0, 							""
+		AppendMenu hMenu.MenuMain_Edit, TCS_RAGGEDRIGHT, 0, 		""
 		AppendMenu hMenu.MenuMain_Edit, 0, MenuTab_PageSorting, "ページの並べ替え"
-		AppendMenu hMenu.MenuMain_Edit, 0x0800, 0, 							""
+		AppendMenu hMenu.MenuMain_Edit, TCS_RAGGEDRIGHT, 0, 							""
 		AppendMenu hMenu.MenuMain_Edit, 0, MenuTab_DelPage,			"このページを削除(&D)"
 
 	CreatePopupMenu
@@ -727,15 +746,15 @@
 
 	CreatePopupMenu
 	hMenu.MeneMain_View = stat		// 表示
-		AppendMenu hMenu.MeneMain_View, 0x0008, MenuTab_Statusbar, 	"ステータスバー(&S)"
-		AppendMenu hMenu.MeneMain_View, 0x0008, MenuTab_PageTab, 		"ページタブ"
+		AppendMenu hMenu.MeneMain_View, TCS_FLATBUTTONS, MenuTab_Statusbar, 	"ステータスバー(&S)"
+		AppendMenu hMenu.MeneMain_View, TCS_FLATBUTTONS, MenuTab_PageTab, 		"ページタブ"
 
 	CreatePopupMenu
 	hMenu.MenuMain_Page = stat		// ページ
 		foreach(TabData)
 			AppendMenu hMenu.MenuMain_Page, 0, MenuTab_PageBase+cnt,	GetTabName(TabData(cnt))
 		loop
-		CheckMenuRadioItem hMenu.MenuMain_Page, MenuTab_PageBase, MenuTab_PageBase+length(TabData), MenuTab_PageBase, 0x0100
+		CheckMenuRadioItem hMenu.MenuMain_Page, MenuTab_PageBase, MenuTab_PageBase+length(TabData), MenuTab_PageBase, WM_KEYDOWN
 	
 	CreatePopupMenu
 	hMenu.MenuMain_Help = stat		// ヘルプ
@@ -743,12 +762,12 @@
 
 	CreateMenu
 	hMenu.0 = stat	// メイン
-		AppendMenu hMenu.0, 0x0010, hMenu.MenuMain_File, 		"ファイル(&F)"
-		AppendMenu hMenu.0, 0x0010, hMenu.MenuMain_Edit, 		"編集(&E)"
-		AppendMenu hMenu.0, 0x0010, hMenu.MenuMain_Format, 	"書式(&O)"
-		AppendMenu hMenu.0, 0x0010, hMenu.MeneMain_View, 		"表示(&V)"
-		AppendMenu hMenu.0, 0x0010, hMenu.MenuMain_Page,	 	"ページ(&P)"
-		AppendMenu hMenu.0, 0x0010, hMenu.MenuMain_Help, 		"ヘルプ(&H)"
+		AppendMenu hMenu.0, TCS_FORCEICONLEFT, hMenu.MenuMain_File, 		"ファイル(&F)"
+		AppendMenu hMenu.0, TCS_FORCEICONLEFT, hMenu.MenuMain_Edit, 		"編集(&E)"
+		AppendMenu hMenu.0, TCS_FORCEICONLEFT, hMenu.MenuMain_Format, 	"書式(&O)"
+		AppendMenu hMenu.0, TCS_FORCEICONLEFT, hMenu.MeneMain_View, 		"表示(&V)"
+		AppendMenu hMenu.0, TCS_FORCEICONLEFT, hMenu.MenuMain_Page,	 	"ページ(&P)"
+		AppendMenu hMenu.0, TCS_FORCEICONLEFT, hMenu.MenuMain_Help, 		"ヘルプ(&H)"
 
 	SetMenu hwnd, hMenu.0
 	DrawMenuBar hwnd
@@ -781,19 +800,18 @@
 *Label_GetDDFile
 	DandD_GetList list
 	
-
-	if FlgUpDate = 0{
+	if isUpdate = 0{
 		gsel 0
-		sendmsg objinfo(objbox,2), 0xB8
-		FlgUpDate = stat
+		sendmsg objinfo(objbox,2), EM_GETMODIFY
+		isUpdate = stat
 	}
 
-	if FlgUpDate = 1{
+	if isUpdate = 1{
 		dialog "ファイルは更新されています。\n変更を保存せずに別のファイルを開きますか？",2
 		if stat = 7:return
 	}
 
-	FlgUpDate = 0
+	isUpdate = 0
 
 	notesel list
 	noteget a,0
@@ -832,7 +850,7 @@
 *Label_Font
 
 	// ダイアログを開く
-	fontdlg n,0x0100
+	fontdlg n,WM_KEYDOWN
 	if stat = 0:return
 	opt = n(1)
 	if n(6) = 1:opt = opt + 4
@@ -863,7 +881,7 @@
 
 	return
 
-//ページの並べ替え
+// ページの並べ替え
 *PageSorting
 
 	gsel BufferPageSorting,2
@@ -911,10 +929,11 @@
 	GetCommand = stat
 
 	gsel BufferPageSorting
-	sendmsg objinfo(lsID,2),0x018B
+	sendmsg objinfo(lsID,2),LB_GETCOUNT
 	ListPageNum = stat
 	gsel 0
 
+	// ソートウィンドウのボタンが押された時の処理
 	switch GetCommand
 	case ButtonIDPageSorting_Cancel
 		EnableWindow hwnd_MainWindow,1
@@ -926,7 +945,7 @@
 
 		dimtype ListName,vartype("str"),ListPageNum
 		repeat ListPageNum
-			sendmsg objinfo(lsID,2),0x0189,cnt,varptr(ListName(cnt))
+			sendmsg objinfo(lsID,2),LB_GETTEXT,cnt,varptr(ListName(cnt))
 		loop
 
 		gsel 0
@@ -945,7 +964,7 @@
 	
 		// その他
 		pboxdata = boxdata
-		FlgUpDate = 1
+		isUpdate = 1
 
 		EnableWindow hwnd_MainWindow,1
 		gsel BufferPageSorting,-1
@@ -963,11 +982,11 @@
 			PageListData(lsNumber) = temp
 			gsel BufferPageSorting
 			sdim listbox_text
-			sendmsg objinfo(lsID,2),0x0188:index = stat
-			sendmsg objinfo(lsID,2),0x0189,index,varptr(listbox_text)
-			sendmsg objinfo(lsID,2),0x0182,index
-			sendmsg objinfo(lsID,2),0x0181,index-1,listbox_text
-			sendmsg objinfo(lsID,2),0x0186,index-1
+			sendmsg objinfo(lsID,2),LB_GETCURSEL:index = stat
+			sendmsg objinfo(lsID,2),LB_GETTEXT,index,varptr(listbox_text)
+			sendmsg objinfo(lsID,2),LB_DELETESTRING,index
+			sendmsg objinfo(lsID,2),LB_INSERTSTRING,index-1,listbox_text
+			sendmsg objinfo(lsID,2),LB_SETCURSEL,index-1
 			lsNumber = lsNumber - 1
 			gsel 0
 		}
@@ -979,20 +998,20 @@
 			PageListData(lsNumber) = temp
 			gsel BufferPageSorting
 			sdim listbox_text
-			sendmsg objinfo(lsID,2),0x0188:index = stat
-			sendmsg objinfo(lsID,2),0x0189,index,varptr(listbox_text)
-			sendmsg objinfo(lsID,2),0x0182,index
-			sendmsg objinfo(lsID,2),0x0181,index+1,listbox_text
-			sendmsg objinfo(lsID,2),0x0186,index+1
+			sendmsg objinfo(lsID,2),LB_GETCURSEL:index = stat
+			sendmsg objinfo(lsID,2),LB_GETTEXT,index,varptr(listbox_text)
+			sendmsg objinfo(lsID,2),LB_DELETESTRING,index
+			sendmsg objinfo(lsID,2),LB_INSERTSTRING,index+1,listbox_text
+			sendmsg objinfo(lsID,2),LB_SETCURSEL,index+1
 			lsNumber = lsNumber + 1
 			gsel 0
 		}
 		swbreak
 	case ButtonIDPageSorting_Delete
 		gsel BufferPageSorting
-		sendmsg objinfo(lsID,2),0x0188:index = stat
+		sendmsg objinfo(lsID,2),LB_GETCURSEL:index = stat
 		if index != -1 && ListPageNum > 1{
-			sendmsg objinfo(lsID,2),0x0182,index
+			sendmsg objinfo(lsID,2),LB_DELETESTRING,index
 			repeat ListPageNum-index-1,index;ここあってるかわからん
 				PageListData(cnt) = PageListData(cnt+1)
 			loop
@@ -1006,7 +1025,7 @@
 		dimtype PageListDataTemp,vartype("str"),ListPageNum
 		repeat ListPageNum
 			if cnt != 0:ListName = ListName + "\n"
-			sendmsg objinfo(lsID,2),0x0189,cnt,varptr(temp)
+			sendmsg objinfo(lsID,2),LB_GETTEXT,cnt,varptr(temp)
 			ListName = ListName + temp
 			PageListDataTemp(cnt) = PageListData(cnt)
 		loop
@@ -1021,7 +1040,7 @@
 	case ButtonIDPageSorting_New
 		PageListData(ListPageNum) = ""
 		gsel BufferPageSorting
-		sendmsg objinfo(lsID,2),0x0180,,"無題のページ"
+		sendmsg objinfo(lsID,2),LB_ADDSTRING,,"無題のページ"
 		gsel 0
 		swbreak
 	swend
