@@ -1,0 +1,28 @@
+
+#module function
+#deffunc enoteload str p1
+	exist p1
+	if strsize=-1{
+		data=""
+		notesel data
+		notesave p1
+	}
+	notesel notedata@
+	noteload p1
+	return
+#global
+
+#module
+#uselib "user32.dll"
+#func   SetWindowLong "SetWindowLongA" int,int,int
+#cfunc  GetWindowLong "GetWindowLongA" int,int
+#define GWL_STYLE	$FFFFFFF0
+#define overrapwin SetWindowLong hwnd,GWL_STYLE,GetWindowLong(hwnd,GWL_STYLE)-$1FB0000
+#deffunc ovscreen int sc,int p1,int p2
+	sx=ginfo(20):sy=ginfo(21)
+	screen sc,sx,sy,2
+	width p1,p2
+	overrapwin
+	gsel sc,1
+	return
+#global
