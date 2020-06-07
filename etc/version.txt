@@ -1,6 +1,6 @@
 ; 行の先頭部分に「;」（半角セミコロン）を付けると、その行はスキップします。
-_FILEVERSION=1.40
-_PRODUCTVERSION=1.40
+_FILEVERSION=1.41
+_PRODUCTVERSION=1.41
 Comments=メモ帳プラスエディタ
 CompanyName=tomsuzuki
 FileDescription=メモ帳プラスエディタ
@@ -8,6 +8,6 @@ InternalName=memoplus
 LegalCopyright=Copyright (C) 2015-2020 TomSuzuki
 LegalTrademarks=
 OriginalFilename=メモ帳プラス.exe
-PrivateBuild=1.40
+PrivateBuild=1.41
 ProductName=メモ帳プラス
-SpecialBuild=1.40
+SpecialBuild=1.41
