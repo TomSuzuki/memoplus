@@ -12,7 +12,7 @@
 #include "user32.as"
 
 // 設定
-#define VersionMes		"Version 1.40"
+#define VersionMes		"Version 1.41"
 #define CopyrightMes	"Copyright 2015-2020 TomSuzuki"
 
 // タブのID割り振り
@@ -99,6 +99,12 @@
 		ct++
 	loop
 	return ct
+#defcfunc askSave int p1	// 更新があったら聞く＆キャンセルするなら false（p1は基本的にisUpdate）
+	if(p1){
+		dialog "ファイルは更新されています。\n閉じますか？",2
+		if stat = 7:return 1
+	}
+	return 0
 #global
 
 // ここから本体 -----------------------------------------------------------------------------------
@@ -205,8 +211,8 @@
 
 	// ステータスバー
 	if(Statusbar){
-		UpdateMesg = "[更新]"
-		if isUpdate = 0:UpdateMesg = ""
+		UpdateMesg = ""
+		if isUpdate = 1:UpdateMesg = "[更新]"
 		dName = getpath(File,8)
 		if(dName == "null"):dName == "無題"
 		color 240,240,240:boxf 0,ginfo_winy-20,ginfo_winx,ginfo_winy
@@ -222,10 +228,11 @@
 // キー
 *Label_Key
 
-	if isUpdate = 0{
+	if isUpdate = 0 {
 		gsel 0
 		sendmsg objinfo(objbox,2), EM_GETMODIFY
 		isUpdate = stat
+		dialog isUpdate
 		if(isUpdate):gosub *Label_DrawStrings
 	}
 
@@ -275,10 +282,7 @@
 		isUpdate = stat
 	}
 
-	if isUpdate = 1{
-		dialog "ファイルは更新されています。\n閉じますか？",2
-		if stat = 7:return
-	}
+	if(askSave(isUpdate)):return
 
 	// すべてのメニューを破棄
 	gsel 0
@@ -390,6 +394,7 @@
 	gosub *Label_SetMenu
 	gosub *Label_SetMesbox
 	gosub *Label_PageTab
+	gosub *Label_DrawStrings
 	
 	return
 
@@ -428,6 +433,7 @@
 	gosub *Label_SetMenu
 	gosub *Label_SetMesbox
 	gosub *Label_PageTab
+	gosub *Label_DrawStrings
 
 	return
 
@@ -444,18 +450,24 @@
 			dialog "メモ帳＋  "+VersionMes+"\n"+CopyrightMes,," version"
 			swbreak
 		case MenuTab_Open			//開く
-			dialog "txp",16,"メモ帳＋ファイル"
-			if stat = 1{
-				OpenFile = refstr
-				gosub *Label_LoadFileTypeSelect
+			if(askSave(isUpdate) == 0){
+				dialog "txp",16,"メモ帳＋ファイル"
+				if stat = 1{
+					OpenFile = refstr
+					isUpdate = 0
+					gosub *Label_LoadFileTypeSelect
+				}
 			}
 			swbreak
 		case MenuTab_NewPage	//新規ページ
 			gosub *Label_CreateNewPage
 			swbreak
 		case MenuTab_NewFile	//新規作成
-			File = "null"
-			gosub *Label_Open
+			if(askSave(isUpdate) == 0){
+				File = "null"
+				isUpdate = 0
+				gosub *Label_Open
+			}
 			swbreak
 		case MenuTab_NameSave	//名前を付けて保存
 			gosub *Label_NameSave
